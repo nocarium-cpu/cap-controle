@@ -114,7 +114,7 @@ app.post("/login", (req, res) => {
 
     if (
         password ===
-        process.env.SITE_PASSWORD
+        process.env.APP_PASSWORD
     ) {
 
         res.json({
