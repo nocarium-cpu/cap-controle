@@ -61,6 +61,30 @@ function getDaysLeft(date) {
     );
 }
 
+async function checkPassword() {
+
+    const password =
+        document.getElementById("passwordInput").value;
+
+    const response = await fetch("/login", {
+        method: "POST",
+        headers: {
+            "Content-Type": "application/json"
+        },
+        body: JSON.stringify({
+            password
+        })
+    });
+
+    const data = await response.json();
+
+    if (data.success) {
+        location.reload();
+    } else {
+        alert("Mot de passe incorrect");
+    }
+}
+
 function revise(index){
 
     controls[index].progress += 20;
