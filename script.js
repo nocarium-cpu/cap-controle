@@ -324,8 +324,7 @@ async function generateRevisionSheet() {
     try {
         console.log("COURS ENVOYÉ :", course);
 
-        const response = await fetch(
-            "http://127.0.0.1:3001/generate",
+        const response = await fetch("/generate"),
             {
                 method: "POST",
                 headers: {
