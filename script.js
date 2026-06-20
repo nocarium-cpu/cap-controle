@@ -324,17 +324,15 @@ async function generateRevisionSheet() {
     try {
         console.log("COURS ENVOYÉ :", course);
 
-        const response = await fetch("/generate"
-            {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                body: JSON.stringify({
-                    course: course
-                })
-            }
-        );
+        const response = await fetch("/generate", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                course: course
+            })
+        });
 
         const data = await response.json();
 
