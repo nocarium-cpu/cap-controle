@@ -1,0 +1,91 @@
+<!DOCTYPE html>
+<html lang="fr">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Cap Contrôle</title>
+
+    <link rel="stylesheet" href="style.css">
+</head>
+<body>
+
+    <div id="loginScreen">
+
+        <h2>Cap Contrôle</h2>
+
+        <input
+            type="password"
+            id="passwordInput"
+            placeholder="Mot de passe"
+        >
+
+        <button onclick="checkPassword()">
+            Connexion
+        </button>
+
+    </div>
+
+    <div id="app" style="display:none;">
+
+    <div class="container">
+
+        <h1>Cap Contrôle</h1>
+
+        <div id="dashboard" class="dashboard"></div>
+
+        <div id="nextExam" class="card next-exam"></div>
+
+        <div id="todayRevision" class="card today-revision"></div>
+
+        <div class="card form">
+
+            <input
+                id="subject"
+                type="text"
+                placeholder="Matière"
+            >
+
+            <input
+                id="chapter"
+                type="text"
+                placeholder="Chapitre"
+            >
+
+            <input
+                id="date"
+                type="date"
+            >
+
+            <button id="addBtn">
+                Ajouter
+            </button>
+
+        </div>
+
+        <div id="controls"></div>
+
+        <div class="card ai-section">
+
+            <textarea
+                id="courseInput"
+                placeholder="Colle ton cours ici..."
+            ></textarea>
+
+            <button
+                class="generate-btn"
+                onclick="generateRevisionSheet()">
+                🚀 Générer ma fiche
+            </button>
+
+        </div>
+
+        <div id="aiResult"></div>
+
+    </div>
+
+    <script src="script.js"></script>
+
+    </div>
+
+</body>
+</html>
