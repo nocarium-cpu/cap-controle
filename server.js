@@ -112,7 +112,10 @@ app.post("/login", (req, res) => {
 
     const { password } = req.body;
 
-    if (password === process.env.APP_PASSWORD) {
+    if (
+        password ===
+        process.env.SITE_PASSWORD
+    ) {
 
         res.json({
             success: true
@@ -125,4 +128,5 @@ app.post("/login", (req, res) => {
         });
 
     }
+
 });
