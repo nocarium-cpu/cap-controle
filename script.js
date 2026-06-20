@@ -80,6 +80,22 @@ async function checkPassword() {
 
         const data = await response.json();
 
+        let history =
+            JSON.parse(
+                localStorage.getItem("capControleHistory")
+            ) || [];
+        
+        history.unshift({
+            date: new Date().toLocaleString(),
+            course: course,
+            result: data
+        });
+        
+        localStorage.setItem(
+            "capControleHistory",
+            JSON.stringify(history)
+        );
+
         if (data.success) {
 
             localStorage.setItem(
