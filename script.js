@@ -473,3 +473,42 @@ async function generateRevisionSheet() {
         `;
     }
 }
+
+function renderHistory() {
+
+    const history =
+        JSON.parse(
+            localStorage.getItem(
+                "capControleHistory"
+            )
+        ) || [];
+
+    const container =
+        document.getElementById(
+            "historyList"
+        );
+
+    container.innerHTML = "";
+
+    history.forEach((item, index) => {
+
+        container.innerHTML += `
+            <div class="history-card">
+
+                <strong>
+                    Fiche ${index + 1}
+                </strong>
+
+                <p>
+                    ${item.date}
+                </p>
+
+                <button
+                    onclick="loadHistory(${index})">
+                    Ouvrir
+                </button>
+
+            </div>
+        `;
+    });
+}
