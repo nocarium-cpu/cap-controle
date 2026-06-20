@@ -333,6 +333,7 @@ function removeControl(index){
 }
 
 render();
+renderHistory();
 
 function formatDate(dateString) {
 
