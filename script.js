@@ -478,15 +478,13 @@ function renderHistory() {
 
     const history =
         JSON.parse(
-            localStorage.getItem(
-                "capControleHistory"
-            )
+            localStorage.getItem("capControleHistory")
         ) || [];
 
     const container =
-        document.getElementById(
-            "historyList"
-        );
+        document.getElementById("historyList");
+
+    if (!container) return;
 
     container.innerHTML = "";
 
@@ -496,15 +494,14 @@ function renderHistory() {
             <div class="history-card">
 
                 <strong>
-                    Fiche ${index + 1}
+                    📚 ${item.course}
                 </strong>
 
                 <p>
                     ${item.date}
                 </p>
 
-                <button
-                    onclick="loadHistory(${index})">
+                <button onclick="loadHistory(${index})">
                     Ouvrir
                 </button>
 
@@ -517,23 +514,22 @@ function loadHistory(index) {
 
     const history =
         JSON.parse(
-            localStorage.getItem(
-                "capControleHistory"
-            )
+            localStorage.getItem("capControleHistory")
         ) || [];
 
-    const data =
-        history[index].result;
+    const data = history[index].result;
 
-    const resultDiv =
-        document.getElementById(
-            "aiResult"
-        );
-
-    resultDiv.innerHTML = `
+    document.getElementById("aiResult").innerHTML = `
         <div class="ai-card">
             <h2>Résumé</h2>
             <p>${data.summary}</p>
+        </div>
+
+        <div class="ai-card">
+            <h2>Notions clés</h2>
+            <ul>
+                ${data.keyPoints.map(p => `<li>${p}</li>`).join("")}
+            </ul>
         </div>
     `;
 }
