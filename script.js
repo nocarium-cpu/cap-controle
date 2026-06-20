@@ -512,3 +512,28 @@ function renderHistory() {
         `;
     });
 }
+
+function loadHistory(index) {
+
+    const history =
+        JSON.parse(
+            localStorage.getItem(
+                "capControleHistory"
+            )
+        ) || [];
+
+    const data =
+        history[index].result;
+
+    const resultDiv =
+        document.getElementById(
+            "aiResult"
+        );
+
+    resultDiv.innerHTML = `
+        <div class="ai-card">
+            <h2>Résumé</h2>
+            <p>${data.summary}</p>
+        </div>
+    `;
+}
