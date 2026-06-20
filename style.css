@@ -321,8 +321,7 @@ details{
 
 }
 
-.history-btn{
-    padding:8px 14px;
-    font-size:11px;
-    margin-top:8px;
+.history-card button{
+    padding: 6px 12px;
+    font-size: 11px;
 }
