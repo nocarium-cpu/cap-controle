@@ -66,24 +66,65 @@ async function checkPassword() {
     const password =
         document.getElementById("passwordInput").value;
 
-    const response = await fetch("/login", {
-        method: "POST",
-        headers: {
-            "Content-Type": "application/json"
-        },
-        body: JSON.stringify({
-            password
-        })
-    });
+    try {
 
-    const data = await response.json();
+        const response = await fetch("/login", {
+            method: "POST",
+            headers: {
+                "Content-Type": "application/json"
+            },
+            body: JSON.stringify({
+                password
+            })
+        });
 
-    if (data.success) {
-        location.reload();
-    } else {
-        alert("Mot de passe incorrect");
+        const data = await response.json();
+
+        if (data.success) {
+
+            localStorage.setItem(
+                "capControleLogged",
+                "true"
+            );
+
+            document.getElementById("loginScreen")
+                .style.display = "none";
+
+            document.getElementById("app")
+                .style.display = "block";
+
+        } else {
+
+            alert("Mot de passe incorrect");
+
+        }
+
+    } catch (error) {
+
+        console.error(error);
+
+        alert("Erreur de connexion");
+
     }
 }
+
+window.addEventListener("load", () => {
+
+    if (
+        localStorage.getItem(
+            "capControleLogged"
+        ) === "true"
+    ) {
+
+        document.getElementById("loginScreen")
+            .style.display = "none";
+
+        document.getElementById("app")
+            .style.display = "block";
+
+    }
+
+});
 
 function revise(index){
 
