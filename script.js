@@ -324,7 +324,7 @@ async function generateRevisionSheet() {
     try {
         console.log("COURS ENVOYÉ :", course);
 
-        const response = await fetch("/generate"),
+        const response = await fetch("/generate"
             {
                 method: "POST",
                 headers: {
