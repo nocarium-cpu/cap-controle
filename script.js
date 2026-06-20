@@ -198,7 +198,7 @@ function render() {
             <div class="stat-number">
                 ${
                     nextControl
-                    ? getDaysLeft(nextControl.date)
+                    ? getDaysLeft(nextControl.date)-1
                     : "-"
                 }
             </div>
@@ -218,7 +218,7 @@ function render() {
 
             <p>
                 Dans
-                ${getDaysLeft(nextControl.date)}
+                ${getDaysLeft(nextControl.date)-1}
                 jour(s)
             </p>
         `;
@@ -270,7 +270,7 @@ function render() {
     controls.forEach((control,index)=>{
 
         const daysLeft =
-            getDaysLeft(control.date);
+            getDaysLeft(control.date)-1;
 
         let className = "normal";
 
@@ -295,7 +295,7 @@ function render() {
 
                 <p>
                     Date :
-                    ${formatDate(control.date)}
+                    ${formatDate(control.date)-1}
                 </p>
 
                 <p class="days ${className}">
