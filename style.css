@@ -323,7 +323,5 @@ details{
 
 #historyList button{
     width:auto;
-    height:32px;
-    line-height:24px;
-    padding:6px 120px;
+    padding:8px 12px 4px 12px;
 }
