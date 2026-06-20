@@ -108,18 +108,21 @@ app.use(cors({
     origin: "*"
 }));
 
-app.post("/login", (req,res)=>{
+app.post("/login", (req, res) => {
 
     const { password } = req.body;
 
-    if(password === process.env.APP_PASSWORD){
+    if (password === process.env.APP_PASSWORD) {
 
-        res.json({ success:true });
-
-    }else{
-
-        res.status(401).json({
-            success:false
+        res.json({
+            success: true
         });
+
+    } else {
+
+        res.json({
+            success: false
+        });
+
     }
 });
