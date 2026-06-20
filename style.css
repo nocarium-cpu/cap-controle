@@ -321,7 +321,8 @@ details{
 
 }
 
-.history-card button{
+#historyList button{
+    width: auto;
     padding: 6px 12px;
     font-size: 11px;
 }
