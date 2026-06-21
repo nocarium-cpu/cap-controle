@@ -1,3 +1,9 @@
+let streak =
+    Number(localStorage.getItem("streak")) || 0;
+
+let bestStreak =
+    Number(localStorage.getItem("bestStreak")) || 0;
+
 const controlsContainer = document.getElementById("controls");
 
 let controls =
