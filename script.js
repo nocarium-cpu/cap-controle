@@ -507,6 +507,12 @@ function renderHistory() {
                 <button onclick="loadHistory(${index})">
                     Ouvrir
                 </button>
+                
+                <button
+                    class="delete-history-btn"
+                    onclick="deleteHistory(${index})">
+                    Supprimer
+                </button>
 
             </div>
         `;
