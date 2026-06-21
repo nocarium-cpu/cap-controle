@@ -703,3 +703,67 @@ async function shareHistory(index) {
         data.code
     );
 }
+
+async function importSheet() {
+
+    const code =
+        document
+            .getElementById("shareCode")
+            .value
+            .trim();
+
+    if(!code){
+
+        alert(
+            "Entre un code"
+        );
+
+        return;
+    }
+
+    const response =
+        await fetch(
+            "/share/" + code
+        );
+
+    if(!response.ok){
+
+        alert(
+            "Code invalide"
+        );
+
+        return;
+    }
+
+    const sheet =
+        await response.json();
+
+    const history =
+        JSON.parse(
+            localStorage.getItem(
+                "capControleHistory"
+            )
+        ) || [];
+
+    history.push({
+        course:
+            sheet.course,
+        date:
+            new Date()
+                .toLocaleDateString("fr-FR"),
+        result:
+            sheet.result
+    });
+
+    localStorage.setItem(
+        "capControleHistory",
+        JSON.stringify(history)
+    );
+
+    renderHistory();
+
+    alert(
+        "Fiche importée !"
+    );
+
+}
