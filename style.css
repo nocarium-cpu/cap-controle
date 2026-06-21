@@ -325,3 +325,30 @@ details{
     width:auto;
     padding:8px 12px 4px 12px;
 }
+
+.history-card{
+    background:#fffaf3;
+    border:1px solid #eadfce;
+    border-radius:15px;
+
+    padding:15px;
+    margin-bottom:12px;
+
+    box-shadow:
+        0 4px 10px rgba(0,0,0,.05);
+}
+
+.history-card strong{
+    display:block;
+    margin-bottom:8px;
+}
+
+.history-card p{
+    margin-bottom:10px;
+    color:#666;
+}
+
+.history-card button{
+    width:auto;
+    padding:6px 12px;
+}
