@@ -515,32 +515,49 @@ function renderHistory() {
 
     if (!container) return;
 
+    const search =
+        document.getElementById("historySearch")
+        ?.value
+        .toLowerCase() || "";
+
     container.innerHTML = "";
 
-    history.forEach((item, index) => {
+    history
+        .filter(item =>
+            item.course
+                .toLowerCase()
+                .includes(search)
+        )
+        .forEach((item, index) => {
 
-        container.innerHTML += `
-            <div class="history-card">
-        
-                <div>
-                    <strong>${item.course}</strong>
+            container.innerHTML += `
+                <div class="history-card">
+
+                    <div class="history-info">
+                        <strong>${item.course}</strong>
+                    </div>
+
+                    <div class="history-actions">
+
+                        <button onclick="loadHistory(${index})">
+                            Ouvrir
+                        </button>
+
+                        <button onclick="renameHistory(${index})">
+                            Renommer
+                        </button>
+
+                        <button
+                            class="delete-history-btn"
+                            onclick="deleteHistory(${index})">
+                            Supprimer
+                        </button>
+
+                    </div>
+
                 </div>
-        
-                <div class="history-actions">
-                    <button onclick="loadHistory(${index})">
-                        Ouvrir
-                    </button>
-        
-                    <button
-                        class="delete-history-btn"
-                        onclick="deleteHistory(${index})">
-                        Supprimer
-                    </button>
-                </div>
-        
-            </div>
-        `;
-    });
+            `;
+        });
 }
 
 function loadHistory(index) {
