@@ -214,6 +214,24 @@ function render() {
                 Jours restants
             </div>
         </div>
+
+        <div class="stat">
+            <div class="stat-number">
+                🔥 ${streak}
+            </div>
+            <div class="stat-label">
+                Série
+            </div>
+        </div>
+        
+        <div class="stat">
+            <div class="stat-number">
+                🏆 ${bestStreak}
+            </div>
+            <div class="stat-label">
+                Record
+            </div>
+        </div>
     `;
 
     if(nextControl){
