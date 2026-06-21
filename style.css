@@ -439,3 +439,9 @@ details{
     }
 
 }
+
+#logo{
+    height: 1em;
+    width: auto;
+    vertical-align: middle;
+}
