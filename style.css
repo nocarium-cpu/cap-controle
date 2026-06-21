@@ -361,3 +361,25 @@ details{
 .delete-history-btn:hover{
     background:#c85c5c;
 }
+
+.history-card{
+    background:#fffaf3;
+    border:1px solid #eadfce;
+    border-radius:12px;
+
+    padding:10px 12px;
+    margin-bottom:8px;
+
+    display:flex;
+    justify-content:space-between;
+    align-items:center;
+}
+
+.history-card p{
+    margin:3px 0 0 0;
+}
+
+.history-card strong{
+    display:block;
+    margin-bottom:3px;
+}
