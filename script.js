@@ -495,25 +495,24 @@ function renderHistory() {
 
         container.innerHTML += `
             <div class="history-card">
-
-                <strong>
-                    ${item.course}
-                </strong>
-
-                <p>
-                    ${item.date}
-                </p>
-
-                <button onclick="loadHistory(${index})">
-                    Ouvrir
-                </button>
-                
-                <button
-                    class="delete-history-btn"
-                    onclick="deleteHistory(${index})">
-                    Supprimer
-                </button>
-
+        
+                <div>
+                    <strong>${item.course}</strong>
+                    <p>${item.date}</p>
+                </div>
+        
+                <div class="history-actions">
+                    <button onclick="loadHistory(${index})">
+                        Ouvrir
+                    </button>
+        
+                    <button
+                        class="delete-history-btn"
+                        onclick="deleteHistory(${index})">
+                        Supprimer
+                    </button>
+                </div>
+        
             </div>
         `;
     });
