@@ -417,6 +417,8 @@ async function generateRevisionSheet() {
             "capControleHistory",
             JSON.stringify(history)
         );
+        
+        renderHistory();
 
         console.log(data);
 
