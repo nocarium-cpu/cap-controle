@@ -140,6 +140,8 @@ function revise(index){
         controls[index].progress = 100;
     }
 
+    updateStreak();
+
     save();
     render();
 }
@@ -562,4 +564,46 @@ function deleteHistory(index) {
     );
 
     renderHistory();
+}
+
+function updateStreak() {
+
+    const today =
+        new Date().toDateString();
+
+    const yesterday =
+        new Date(Date.now() - 86400000)
+        .toDateString();
+
+    const lastRevision =
+        localStorage.getItem("lastRevision");
+
+    if (lastRevision === today) {
+        return;
+    }
+
+    if (lastRevision === yesterday) {
+        streak++;
+    } else {
+        streak = 1;
+    }
+
+    if (streak > bestStreak) {
+        bestStreak = streak;
+    }
+
+    localStorage.setItem(
+        "streak",
+        streak
+    );
+
+    localStorage.setItem(
+        "bestStreak",
+        bestStreak
+    );
+
+    localStorage.setItem(
+        "lastRevision",
+        today
+    );
 }
