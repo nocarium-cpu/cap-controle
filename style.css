@@ -405,12 +405,26 @@ details{
     gap:8px;
 }
 
+.history-actions{
+    display:flex;
+    gap:8px;
+    justify-content:flex-end;
+}
+
+.history-actions button{
+    width:90px;
+    min-width:90px;
+}
+
 @media(max-width:700px){
 
     .history-actions{
-        display:flex;
         flex-direction:column;
-        gap:6px;
+        align-items:center;
+    }
+
+    .history-actions button{
+        width:120px;
     }
 
 }
