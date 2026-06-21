@@ -377,8 +377,14 @@ details{
 @media(max-width:700px){
 
     .history-card{
-        grid-template-columns:1fr;
+        display:flex;
+        justify-content:space-between;
+        align-items:flex-start;
         gap:10px;
+    }
+
+    .history-info{
+        flex:1;
     }
 
     .history-actions{
@@ -389,15 +395,9 @@ details{
     }
 
     .history-actions button{
-    
-        width:120px;
-        min-width:120px;
-        max-width:120px;
-    
-        padding:8px 0 5px 0;
-    
-        text-align:center;
+        width:110px;
+        min-width:110px;
+        max-width:110px;
     }
 
-}
 }
