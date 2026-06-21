@@ -1,9 +1,16 @@
+import { MongoClient } from "mongodb";
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import OpenAI from "openai";
 
 dotenv.config();
+
+const client = new MongoClient(
+    process.env.MONGODB_URI
+);
+
+let db;
 
 const app = express();
 
@@ -100,9 +107,38 @@ res.json(
     }
 });
 
-app.listen(3001, () => {
-    console.log("Serveur lancé sur http://localhost:3001");
-});
+async function startServer() {
+
+    try {
+
+        await client.connect();
+
+        db =
+            client.db("capcontrole");
+
+        console.log(
+            "MongoDB connecté"
+        );
+
+        app.listen(3001, () => {
+
+            console.log(
+                "Serveur lancé sur http://localhost:3001"
+            );
+
+        });
+
+    } catch(error) {
+
+        console.error(
+            "Erreur MongoDB :",
+            error
+        );
+
+    }
+}
+
+startServer();
 
 app.use(cors({
     origin: "*"
