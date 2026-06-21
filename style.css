@@ -394,3 +394,13 @@ details{
     justify-content:flex-end;
     gap:10px;
 }
+
+#historySearch{
+    width:100%;
+    margin-bottom:15px;
+}
+
+.history-actions{
+    display:flex;
+    gap:8px;
+}
