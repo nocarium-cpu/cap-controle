@@ -411,3 +411,31 @@ details{
     height: 38px;
     padding: 6px 12px;
 }
+
+.share-import{
+    display:flex;
+    gap:10px;
+    align-items:center;
+}
+
+#shareCode{
+    flex:1;
+}
+
+#importBtn{
+    width:auto;
+    min-width:110px;
+}
+
+@media(max-width:700px){
+
+    .share-import{
+        flex-direction:column;
+    }
+
+    #shareCode,
+    #importBtn{
+        width:100%;
+    }
+
+}

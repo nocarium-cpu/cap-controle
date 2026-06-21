@@ -767,3 +767,18 @@ async function importSheet() {
     );
 
 }
+
+.share-import{
+    display:flex;
+    gap:10px;
+    align-items:center;
+}
+
+#shareCode{
+    flex:1;
+}
+
+#importBtn{
+    width:auto;
+    min-width:110px;
+}
