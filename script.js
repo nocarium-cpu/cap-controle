@@ -495,7 +495,7 @@ function renderHistory() {
             <div class="history-card">
 
                 <strong>
-                    📚 ${item.course}
+                    ${item.course}
                 </strong>
 
                 <p>
