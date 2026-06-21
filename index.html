@@ -83,6 +83,13 @@
 
         <div class="card">
             <h2>Historique des fiches</h2>
+
+            <input
+                type="text"
+                id="historySearch"
+                placeholder="Rechercher une fiche..."
+                oninput="renderHistory()"
+            >
         
             <div id="historyList"></div>
         </div>
