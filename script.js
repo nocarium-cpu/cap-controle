@@ -217,7 +217,7 @@ function render() {
 
         <div class="stat">
             <div class="stat-number">
-                🔥 ${streak}
+                ${streak}
             </div>
             <div class="stat-label">
                 Série
@@ -226,7 +226,7 @@ function render() {
         
         <div class="stat">
             <div class="stat-number">
-                🏆 ${bestStreak}
+                ${bestStreak}
             </div>
             <div class="stat-label">
                 Record
