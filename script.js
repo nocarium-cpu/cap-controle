@@ -642,3 +642,30 @@ function updateStreak() {
         today
     );
 }
+
+function renameHistory(index) {
+
+    const history =
+        JSON.parse(
+            localStorage.getItem("capControleHistory")
+        ) || [];
+
+    const newName = prompt(
+        "Nouveau nom de la fiche :",
+        history[index].course
+    );
+
+    if (!newName || !newName.trim()) {
+        return;
+    }
+
+    history[index].course =
+        newName.trim();
+
+    localStorage.setItem(
+        "capControleHistory",
+        JSON.stringify(history)
+    );
+
+    renderHistory();
+}
