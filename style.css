@@ -375,16 +375,22 @@ details{
     align-items:center;
 }
 
-.history-card p{
-    margin:3px 0 0 0;
-}
+.history-card{
+    display:grid;
+    grid-template-columns: 1fr 220px;
 
-.history-card strong{
-    display:block;
-    margin-bottom:3px;
+    align-items:center;
+
+    padding:15px;
+    margin-bottom:10px;
+
+    background:#fffaf3;
+    border:1px solid #eadfce;
+    border-radius:15px;
 }
 
 .history-actions{
     display:flex;
-    gap:6px;
+    justify-content:flex-end;
+    gap:10px;
 }
