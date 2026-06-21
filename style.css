@@ -383,3 +383,8 @@ details{
     display:block;
     margin-bottom:3px;
 }
+
+.history-actions{
+    display:flex;
+    gap:6px;
+}
