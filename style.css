@@ -401,3 +401,13 @@ details{
     }
 
 }
+
+#shareCode{
+    height: 38px;
+    padding: 6px 12px;
+}
+
+#importBtn{
+    height: 38px;
+    padding: 6px 12px;
+}
