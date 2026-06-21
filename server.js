@@ -138,6 +138,73 @@ async function startServer() {
     }
 }
 
+app.post("/share", async (req, res) => {
+
+    try {
+
+        const code =
+            Math.random()
+            .toString(36)
+            .substring(2, 8)
+            .toUpperCase();
+
+        await db
+            .collection("sharedSheets")
+            .insertOne({
+                code,
+                ...req.body,
+                createdAt: new Date()
+            });
+
+        res.json({ code });
+
+    } catch(error) {
+
+        console.error(error);
+
+        res.status(500).json({
+            error: "Erreur partage"
+        });
+
+    }
+
+});
+
+app.get("/share/:code", async (req, res) => {
+
+    try {
+
+        const sheet =
+            await db
+                .collection("sharedSheets")
+                .findOne({
+                    code:
+                        req.params.code
+                            .toUpperCase()
+                });
+
+        if(!sheet){
+
+            return res.status(404).json({
+                error: "Fiche introuvable"
+            });
+
+        }
+
+        res.json(sheet);
+
+    } catch(error){
+
+        console.error(error);
+
+        res.status(500).json({
+            error: "Erreur serveur"
+        });
+
+    }
+
+});
+
 startServer();
 
 app.use(cors({
