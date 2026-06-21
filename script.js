@@ -539,6 +539,10 @@ function renderHistory() {
 
                     <div class="history-actions">
 
+                        <button onclick="shareHistory(${index})">
+                            Partager
+                        </button>
+
                         <button onclick="loadHistory(${index})">
                             Ouvrir
                         </button>
@@ -668,4 +672,34 @@ function renameHistory(index) {
     );
 
     renderHistory();
+}
+
+async function shareHistory(index) {
+
+    const history =
+        JSON.parse(
+            localStorage.getItem(
+                "capControleHistory"
+            )
+        ) || [];
+
+    const response =
+        await fetch("/share", {
+            method: "POST",
+            headers: {
+                "Content-Type":
+                    "application/json"
+            },
+            body: JSON.stringify(
+                history[index]
+            )
+        });
+
+    const data =
+        await response.json();
+
+    prompt(
+        "Code de partage :",
+        data.code
+    );
 }
