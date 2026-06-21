@@ -498,7 +498,6 @@ function renderHistory() {
         
                 <div>
                     <strong>${item.course}</strong>
-                    <p>${item.date}</p>
                 </div>
         
                 <div class="history-actions">
