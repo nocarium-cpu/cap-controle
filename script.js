@@ -542,3 +542,20 @@ function loadHistory(index) {
         </div>
     `;
 }
+
+function deleteHistory(index) {
+
+    const history =
+        JSON.parse(
+            localStorage.getItem("capControleHistory")
+        ) || [];
+
+    history.splice(index, 1);
+
+    localStorage.setItem(
+        "capControleHistory",
+        JSON.stringify(history)
+    );
+
+    renderHistory();
+}
