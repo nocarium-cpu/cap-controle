@@ -777,3 +777,51 @@ async function importSheet() {
     );
 
 }
+
+function startRevision(index, button){
+
+    const select =
+        document.getElementById(
+            `revisionTime${index}`
+        );
+
+    const minutes =
+        Number(select.value);
+
+    let timeLeft =
+        minutes * 60;
+
+    button.disabled = true;
+
+    const interval =
+        setInterval(() => {
+
+            timeLeft--;
+
+            const mins =
+                Math.floor(
+                    timeLeft / 60
+                );
+
+            const secs =
+                String(
+                    timeLeft % 60
+                ).padStart(2, "0");
+
+            button.textContent =
+                `${mins}:${secs}`;
+
+            if(timeLeft <= 0){
+
+                clearInterval(interval);
+
+                revise(
+                    index,
+                    minutes
+                );
+
+            }
+
+        }, 1000);
+
+}
