@@ -34,7 +34,8 @@ function addControl() {
     subject,
     chapter,
     date,
-    progress: 0
+    progress: 0,
+    revisionTime: 900
     });
 
     save();
@@ -132,9 +133,9 @@ window.addEventListener("load", () => {
 
 });
 
-function revise(index){
+function revise(index, minutes){
 
-    controls[index].progress += 20;
+    controls[index].progress += minutes;
 
     if(controls[index].progress > 100){
         controls[index].progress = 100;
@@ -336,8 +337,17 @@ function render() {
                     Révision : ${progress}%
                 </p>
 
-                <button class="revise-btn" onclick="revise(${index})">
-                    J'ai révisé
+                <select id="revisionTime${index}">
+                    <option value="5">5 min</option>
+                    <option value="15" selected>15 min</option>
+                    <option value="30">30 min</option>
+                    <option value="60">1 h</option>
+                </select>
+
+                <button
+                    class="revise-btn"
+                    onclick="startRevision(${index}, this)">
+                    Réviser
                 </button>
 
                 <button class="delete-btn" onclick="removeControl(${index})">
