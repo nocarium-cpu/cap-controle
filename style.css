@@ -470,26 +470,31 @@ select{
 
 .support-link{
 
-    display:block;
+    display:inline-block;
 
-    text-align:center;
+    padding:8px 14px;
 
-    margin-top:20px;
+    background:#b99669;
 
-    color:#b99669;
+    color:white;
+
+    border-radius:10px;
 
     text-decoration:none;
 
     font-size:11px;
 
-    opacity:.8;
+    transition:.2s;
 
 }
 
 .support-link:hover{
 
-    opacity:1;
+    background:#a8885d;
 
-    text-decoration:underline;
+}
 
+.support-container{
+    text-align:center;
+    margin-top:20px;
 }
