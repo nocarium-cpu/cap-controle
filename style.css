@@ -448,23 +448,24 @@ details{
 .revise-btn,
 .delete-btn{
 
-    padding: 6px 12px;
+    height:30px;
 
-    min-height: 32px;
+    padding:0 12px;
 
-    line-height: 1;
+    line-height:30px;
 }
 
 select{
 
-    border:none;
+    height:30px;
+
+    padding:0 10px;
 
     border-radius:999px;
-
-    padding:8px 14px;
 
     background:#fffaf3;
 
     border:1px solid #eadfce;
 
+    font-size:11px;
 }
