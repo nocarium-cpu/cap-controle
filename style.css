@@ -455,6 +455,10 @@ details{
 
 }
 
+.import-card{
+    margin-bottom: 20px;
+}
+
 .logo{
     height:20px !important;
     width:auto !important;
