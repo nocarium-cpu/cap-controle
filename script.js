@@ -61,7 +61,7 @@ function getDaysLeft(date) {
     const examDate = new Date(date);
 
     const diff =
-        examDate - today;
+        examDate - today - 1;
 
     return Math.ceil(
         diff / (1000 * 60 * 60 * 24)
