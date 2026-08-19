@@ -55,15 +55,22 @@ function save() {
 function getDaysLeft(date) {
 
     const today = new Date();
+    today.setHours(0, 0, 0, 0);
 
-    today.setHours(0,0,0,0);
+    const [year, month, day] = date.split("-");
 
-    const examDate = new Date(date);
+    const examDate = new Date(
+        year,
+        month - 1,
+        day
+    );
+
+    examDate.setHours(0, 0, 0, 0);
 
     const diff =
         examDate - today;
 
-    return Math.ceil(
+    return Math.round(
         diff / (1000 * 60 * 60 * 24)
     );
 }
