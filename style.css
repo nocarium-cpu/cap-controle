@@ -334,7 +334,11 @@ details{
 
 #historyList button{
     width:auto;
-    padding:8px 12px 4px 12px;
+    height:32px;
+    padding:0 12px;
+    display:flex;
+    align-items:center;
+    justify-content:center;
 }
 
 /* ========================= */
