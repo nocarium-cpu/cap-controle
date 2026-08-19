@@ -487,26 +487,25 @@ select{
     background:#fffaf3;
 }
 
-.support-link{
-
-    display:block;
-
-    text-align:center;
-
-    margin-top:20px;
-
-    color: green;
-
-    text-decoration:none;
-
-    font-size:11px;
-
+.footer-links {
+    display: flex;
+    justify-content: center;
+    align-items: center;
+    gap: 20px;
+    margin-top: 20px;
 }
 
-.support-link:hover{
+.support-link {
+    color: green;
+    text-decoration: none;
+    font-size: 11px;
+}
 
-    opacity:1;
+.support-link:hover {
+    text-decoration: underline;
+}
 
-    text-decoration:underline;
-
+.copyright {
+    font-size: 11px;
+    color: #8a7d70;
 }
