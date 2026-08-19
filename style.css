@@ -11,7 +11,12 @@
     margin:0;
     padding:0;
     box-sizing:border-box;
-    font-family:"Minecraft", sans-serif;
+    font-family:"Cormorant Garamond", serif;
+}
+
+body{
+    font-family:"Cormorant Garamond", serif;
+    font-weight:400;
 }
 
 body{
@@ -31,6 +36,12 @@ h1{
     font-size:2rem;
     margin-bottom:25px;
     color:#4a3f35;
+}
+
+h1{
+    font-family:"Cormorant Garamond", serif;
+    font-weight:300;
+    font-style:italic;
 }
 
 .dashboard{
