@@ -515,9 +515,10 @@ select{
 }
 
 #log-button{
-    padding: 10px;
+    padding: 7.5px;
+    margin-bottom: 5px;
 }
 
 #create{
-    padding: 10px;
+    padding: 7.5px;
 }
