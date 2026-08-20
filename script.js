@@ -893,63 +893,35 @@ async function generateRevisionSheet() {
 
 function renderHistory() {
 
-    const history =
-        JSON.parse(
-            localStorage.getItem("capControleHistory")
-        ) || [];
-
-    const container =
+    const historyList =
         document.getElementById("historyList");
 
-    if (!container) return;
-
     const search =
-        document.getElementById("historySearch")
-        ?.value
-        .toLowerCase() || "";
+        document
+            .getElementById("historySearch")
+            .value
+            .toLowerCase()
+            .trim();
 
-    container.innerHTML = "";
-
-    history
-        .filter(item =>
+    const filtered =
+        history.filter(item =>
             item.course
                 .toLowerCase()
                 .includes(search)
-        )
-        .forEach((item, index) => {
+        );
 
-            container.innerHTML += `
-                <div class="history-card">
+    historyList.innerHTML = "";
 
-                    <div class="history-info">
-                        <strong>${item.course}</strong>
-                    </div>
+    filtered.forEach(item => {
 
-                    <div class="history-actions">
+        historyList.innerHTML += `
+            <div class="history-item">
+                <h3>${item.course}</h3>
+                <p>${item.date}</p>
+            </div>
+        `;
 
-                        <button onclick="shareHistory(${index})">
-                            Partager
-                        </button>
-
-                        <button onclick="loadHistory(${index})">
-                            Ouvrir
-                        </button>
-
-                        <button onclick="renameHistory(${index})">
-                            Renommer
-                        </button>
-
-                        <button
-                            class="delete-history-btn"
-                            onclick="deleteHistory(${index})">
-                            Supprimer
-                        </button>
-
-                    </div>
-
-                </div>
-            `;
-        });
+    });
 }
 
 window.addEventListener("load", async () => {
