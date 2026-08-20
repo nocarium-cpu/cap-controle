@@ -513,3 +513,11 @@ select{
     font-size: 11px;
     color: #8a7d70;
 }
+
+.log-button{
+    margin: 5px;
+}
+
+.create{
+    margin: 5px;
+}
