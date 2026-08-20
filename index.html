@@ -105,6 +105,102 @@
 
     <div id="app" style="display:none;">
 
+        <div id="settingsPage" style="display:none;">
+
+            <div class="settings-container">
+        
+                <button class="back-settings-btn" onclick="closeSettings()">
+                    ← Retour
+                </button>
+        
+                <h1>Paramètres</h1>
+        
+                <div class="settings-card">
+        
+                    <h2>Mon profil</h2>
+        
+                    <div class="settings-item">
+                        <div>
+                            <strong>Pseudo</strong>
+                            <p id="settingsUsername">Chargement...</p>
+                        </div>
+        
+                        <button onclick="editUsername()">
+                            Modifier
+                        </button>
+                    </div>
+        
+                    <div class="settings-item">
+                        <div>
+                            <strong>Adresse e-mail</strong>
+                            <p id="settingsEmail">Chargement...</p>
+                        </div>
+                    </div>
+        
+                </div>
+        
+                <div class="settings-card">
+        
+                    <h2>Sécurité</h2>
+        
+                    <div class="settings-item">
+                        <div>
+                            <strong>Mot de passe</strong>
+                            <p>Modifier ton mot de passe</p>
+                        </div>
+        
+                        <button onclick="changePassword()">
+                            Modifier
+                        </button>
+                    </div>
+        
+                </div>
+        
+                <div class="settings-card">
+        
+                    <h2>Apparence</h2>
+        
+                    <div class="settings-item">
+        
+                        <div>
+                            <strong>Thème</strong>
+                            <p>Choisis l'apparence de Cap Contrôle</p>
+                        </div>
+        
+                        <select id="themeSelect" onchange="changeTheme()">
+                            <option value="light">Clair</option>
+                            <option value="dark">Sombre</option>
+                        </select>
+        
+                    </div>
+        
+                </div>
+        
+                <div class="settings-card danger-card">
+        
+                    <h2>Zone dangereuse</h2>
+        
+                    <div class="settings-item">
+        
+                        <div>
+                            <strong>Supprimer mon compte</strong>
+                            <p>Cette action est définitive.</p>
+                        </div>
+        
+                        <button
+                            class="delete-account-btn"
+                            onclick="deleteAccount()">
+                            Supprimer
+                        </button>
+        
+                    </div>
+        
+                </div>
+        
+            </div>
+        
+        </div>
+
         <div class="profile-menu-container">
 
             <button
