@@ -110,6 +110,95 @@ async function addControl() {
     }
 }
 
+async function loadAccountData() {
+
+    try {
+
+        const statsResponse =
+            await fetch(
+                "/api/stats",
+                {
+                    credentials: "include"
+                }
+            );
+
+        if (!statsResponse.ok) {
+            return;
+        }
+
+        const stats =
+            await statsResponse.json();
+
+        streak =
+            stats.streak || 0;
+
+        bestStreak =
+            stats.bestStreak || 0;
+
+
+        const historyResponse =
+            await fetch(
+                "/api/history",
+                {
+                    credentials: "include"
+                }
+            );
+
+        if (!historyResponse.ok) {
+            return;
+        }
+
+        history =
+            await historyResponse.json();
+
+        render();
+        renderHistory();
+
+    } catch (error) {
+
+        console.error(
+            "Erreur chargement données compte :",
+            error
+        );
+
+    }
+
+}
+
+async function saveStats() {
+
+    try {
+
+        await fetch(
+            "/api/stats",
+            {
+                method: "PUT",
+
+                headers: {
+                    "Content-Type":
+                        "application/json"
+                },
+
+                credentials: "include",
+
+                body: JSON.stringify({
+                    streak,
+                    bestStreak
+                })
+            }
+        );
+
+    } catch (error) {
+
+        console.error(
+            "Erreur sauvegarde série :",
+            error
+        );
+
+    }
+
+}
+
 function save() {
     localStorage.setItem(
         "capControle",
