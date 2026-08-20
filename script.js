@@ -42,7 +42,7 @@ document
     .getElementById("addBtn")
     .addEventListener("click", addControl);
 
-function addControl() {
+async function addControl() {
 
     const subject =
         document.getElementById("subject").value.trim();
@@ -58,19 +58,57 @@ function addControl() {
         return;
     }
 
-    controls.push({
-    subject,
-    chapter,
-    date,
-    progress: 0,
-    revisionTime: 900
-    });
+    try {
 
-    save();
-    render();
+        const response = await fetch(
+            "/api/controls",
+            {
+                method: "POST",
 
-    document.getElementById("subject").value = "";
-    document.getElementById("chapter").value = "";
+                headers: {
+                    "Content-Type": "application/json"
+                },
+
+                credentials: "include",
+
+                body: JSON.stringify({
+                    subject,
+                    chapter,
+                    date
+                })
+            }
+        );
+
+        const data =
+            await response.json();
+
+        if (!response.ok) {
+
+            alert(
+                data.error ||
+                "Impossible d'ajouter le contrôle."
+            );
+
+            return;
+        }
+
+        controls.push(data.control);
+
+        render();
+
+        document.getElementById("subject").value = "";
+        document.getElementById("chapter").value = "";
+        document.getElementById("date").value = "";
+
+    } catch (error) {
+
+        console.error(error);
+
+        alert(
+            "Impossible de contacter le serveur."
+        );
+
+    }
 }
 
 function save() {
