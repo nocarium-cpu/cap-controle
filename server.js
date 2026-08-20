@@ -810,6 +810,402 @@ app.post(
     }
 );
 
+/* ================================================= */
+/*                 AUTHENTIFICATION                  */
+/* ================================================= */
+
+/*
+    Récupère l'utilisateur connecté
+    à partir de sa session.
+*/
+
+async function getCurrentUser(req) {
+
+    const token =
+        getSessionToken(req);
+
+    if (!token) {
+        return null;
+    }
+
+    const tokenHash =
+        hashSessionToken(token);
+
+    const session =
+        await db
+            .collection("sessions")
+            .findOne({
+                tokenHash
+            });
+
+    if (!session) {
+        return null;
+    }
+
+    if (
+        session.expiresAt < new Date()
+    ) {
+
+        await db
+            .collection("sessions")
+            .deleteOne({
+                _id: session._id
+            });
+
+        return null;
+    }
+
+    const user =
+        await db
+            .collection("users")
+            .findOne({
+                _id: session.userId
+            });
+
+    return user || null;
+}
+
+
+/* ================================================= */
+/*                    CONTRÔLES                      */
+/* ================================================= */
+
+
+/*
+    Récupérer les contrôles
+    de l'utilisateur connecté.
+*/
+
+app.get(
+    "/api/controls",
+    async (req, res) => {
+
+        try {
+
+            const user =
+                await getCurrentUser(req);
+
+            if (!user) {
+
+                return res.status(401).json({
+                    error:
+                        "Utilisateur non connecté."
+                });
+
+            }
+
+            const controls =
+                await db
+                    .collection("controls")
+                    .find({
+                        userId: user._id
+                    })
+                    .sort({
+                        date: 1
+                    })
+                    .toArray();
+
+            res.json(controls);
+
+        } catch (error) {
+
+            console.error(
+                "Erreur récupération contrôles :",
+                error
+            );
+
+            res.status(500).json({
+                error:
+                    "Erreur serveur."
+            });
+
+        }
+
+    }
+);
+
+
+/*
+    Ajouter un contrôle.
+*/
+
+app.post(
+    "/api/controls",
+    async (req, res) => {
+
+        try {
+
+            const user =
+                await getCurrentUser(req);
+
+            if (!user) {
+
+                return res.status(401).json({
+                    error:
+                        "Utilisateur non connecté."
+                });
+
+            }
+
+            const {
+                subject,
+                chapter,
+                date
+            } = req.body;
+
+            if (
+                !subject ||
+                !chapter ||
+                !date
+            ) {
+
+                return res.status(400).json({
+                    error:
+                        "Tous les champs sont obligatoires."
+                });
+
+            }
+
+            const control = {
+
+                userId:
+                    user._id,
+
+                subject:
+                    subject.trim(),
+
+                chapter:
+                    chapter.trim(),
+
+                date,
+
+                progress:
+                    0,
+
+                revisionTime:
+                    900,
+
+                createdAt:
+                    new Date()
+
+            };
+
+            const result =
+                await db
+                    .collection("controls")
+                    .insertOne(control);
+
+            res.json({
+
+                success: true,
+
+                control: {
+                    _id:
+                        result.insertedId,
+
+                    ...control
+
+                }
+
+            });
+
+        } catch (error) {
+
+            console.error(
+                "Erreur ajout contrôle :",
+                error
+            );
+
+            res.status(500).json({
+                error:
+                    "Erreur serveur."
+            });
+
+        }
+
+    }
+);
+
+
+/*
+    Modifier la progression
+    d'un contrôle.
+*/
+
+app.put(
+    "/api/controls/:id",
+    async (req, res) => {
+
+        try {
+
+            const user =
+                await getCurrentUser(req);
+
+            if (!user) {
+
+                return res.status(401).json({
+                    error:
+                        "Utilisateur non connecté."
+                });
+
+            }
+
+            const {
+                progress
+            } = req.body;
+
+            if (
+                typeof progress !== "number"
+            ) {
+
+                return res.status(400).json({
+                    error:
+                        "Progression invalide."
+                });
+
+            }
+
+            const { ObjectId } =
+                await import("mongodb");
+
+            const id =
+                new ObjectId(
+                    req.params.id
+                );
+
+            const result =
+                await db
+                    .collection("controls")
+                    .updateOne(
+
+                        {
+                            _id: id,
+
+                            userId:
+                                user._id
+                        },
+
+                        {
+                            $set: {
+                                progress:
+                                    Math.min(
+                                        100,
+                                        Math.max(
+                                            0,
+                                            progress
+                                        )
+                                    )
+                            }
+                        }
+
+                    );
+
+            if (
+                result.matchedCount === 0
+            ) {
+
+                return res.status(404).json({
+                    error:
+                        "Contrôle introuvable."
+                });
+
+            }
+
+            res.json({
+                success: true
+            });
+
+        } catch (error) {
+
+            console.error(
+                "Erreur modification contrôle :",
+                error
+            );
+
+            res.status(500).json({
+                error:
+                    "Erreur serveur."
+            });
+
+        }
+
+    }
+);
+
+
+/*
+    Supprimer un contrôle.
+*/
+
+app.delete(
+    "/api/controls/:id",
+    async (req, res) => {
+
+        try {
+
+            const user =
+                await getCurrentUser(req);
+
+            if (!user) {
+
+                return res.status(401).json({
+                    error:
+                        "Utilisateur non connecté."
+                });
+
+            }
+
+            const { ObjectId } =
+                await import("mongodb");
+
+            const id =
+                new ObjectId(
+                    req.params.id
+                );
+
+            const result =
+                await db
+                    .collection("controls")
+                    .deleteOne({
+
+                        _id: id,
+
+                        userId:
+                            user._id
+
+                    });
+
+            if (
+                result.deletedCount === 0
+            ) {
+
+                return res.status(404).json({
+                    error:
+                        "Contrôle introuvable."
+                });
+
+            }
+
+            res.json({
+                success: true
+            });
+
+        } catch (error) {
+
+            console.error(
+                "Erreur suppression contrôle :",
+                error
+            );
+
+            res.status(500).json({
+                error:
+                    "Erreur serveur."
+            });
+
+        }
+
+    }
+);
 
 /* ================================================= */
 /*                       IA                          */
