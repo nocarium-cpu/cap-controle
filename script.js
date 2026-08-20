@@ -272,6 +272,7 @@ async function login() {
             .style.display = "block";
         
         await loadControls();
+        await loadAccountData();
 
     } catch (error) {
 
@@ -362,6 +363,7 @@ async function register() {
             .style.display = "block";
 
         await loadControls();
+        await loadAccountData();
 
     } catch (error) {
 
