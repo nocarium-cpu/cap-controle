@@ -1276,25 +1276,6 @@ document.addEventListener(
     }
 );
 
-
-/* Paramètres */
-
-settingsButton?.addEventListener(
-    "click",
-    () => {
-
-        profileDropdown?.classList.remove(
-            "open"
-        );
-
-        alert(
-            "Les paramètres seront bientôt disponibles."
-        );
-
-    }
-);
-
-
 /* Déconnexion */
 
 logoutButton?.addEventListener(
