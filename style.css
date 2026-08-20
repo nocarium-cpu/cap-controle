@@ -515,9 +515,9 @@ select{
 }
 
 #log-button{
-    margin: 5px;
+    margin: -1px;
 }
 
 #create{
-    margin: 5px;
+    margin: -1px;
 }
