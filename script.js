@@ -75,10 +75,18 @@ function getDaysLeft(date) {
     );
 }
 
-async function checkPassword() {
+async function login() {
+
+    const email =
+        document.getElementById("loginEmail").value.trim();
 
     const password =
-        document.getElementById("passwordInput").value;
+        document.getElementById("loginPassword").value;
+
+    if (!email || !password) {
+        alert("Remplis tous les champs.");
+        return;
+    }
 
     try {
 
@@ -87,48 +95,21 @@ async function checkPassword() {
             headers: {
                 "Content-Type": "application/json"
             },
+            credentials: "include",
             body: JSON.stringify({
+                email,
                 password
             })
         });
 
         const data = await response.json();
 
-        if (data.success) {
+        if (!response.ok) {
 
-            localStorage.setItem(
-                "capControleLogged",
-                "true"
-            );
-
-            document.getElementById("loginScreen")
-                .style.display = "none";
-
-            document.getElementById("app")
-                .style.display = "block";
-
-        } else {
-
-            alert("Mot de passe incorrect");
+            alert(data.error || "Erreur de connexion.");
+            return;
 
         }
-
-    } catch (error) {
-
-        console.error(error);
-
-        alert("Erreur de connexion");
-
-    }
-}
-
-window.addEventListener("load", () => {
-
-    if (
-        localStorage.getItem(
-            "capControleLogged"
-        ) === "true"
-    ) {
 
         document.getElementById("loginScreen")
             .style.display = "none";
@@ -136,9 +117,131 @@ window.addEventListener("load", () => {
         document.getElementById("app")
             .style.display = "block";
 
+    } catch (error) {
+
+        console.error(error);
+
+        alert("Impossible de contacter le serveur.");
+
+    }
+}
+
+
+async function register() {
+
+    const username =
+        document
+            .getElementById("registerUsername")
+            .value
+            .trim();
+
+    const email =
+        document
+            .getElementById("registerEmail")
+            .value
+            .trim();
+
+    const password =
+        document
+            .getElementById("registerPassword")
+            .value;
+
+    const confirmPassword =
+        document
+            .getElementById("registerPasswordConfirm")
+            .value;
+
+    if (!username || !email || !password || !confirmPassword) {
+
+        alert("Remplis tous les champs.");
+        return;
+
     }
 
-});
+    if (password !== confirmPassword) {
+
+        alert("Les mots de passe ne correspondent pas.");
+        return;
+
+    }
+
+    try {
+
+        const response = await fetch("/register", {
+
+            method: "POST",
+
+            headers: {
+                "Content-Type": "application/json"
+            },
+
+            credentials: "include",
+
+            body: JSON.stringify({
+                username,
+                email,
+                password
+            })
+
+        });
+
+        const data =
+            await response.json();
+
+        if (!response.ok) {
+
+            alert(
+                data.error ||
+                "Erreur lors de la création du compte."
+            );
+
+            return;
+
+        }
+
+        document.getElementById("loginScreen")
+            .style.display = "none";
+
+        document.getElementById("app")
+            .style.display = "block";
+
+    } catch (error) {
+
+        console.error(error);
+
+        alert("Impossible de contacter le serveur.");
+
+    }
+
+}
+
+
+function showRegister() {
+
+    document.getElementById("loginForm")
+        .style.display = "none";
+
+    document.getElementById("registerForm")
+        .style.display = "block";
+
+    document.getElementById("authTitle")
+        .textContent = "Créer un compte";
+
+}
+
+
+function showLogin() {
+
+    document.getElementById("registerForm")
+        .style.display = "none";
+
+    document.getElementById("loginForm")
+        .style.display = "block";
+
+    document.getElementById("authTitle")
+        .textContent = "Connexion";
+
+}
 
 function revise(index, minutes){
 
