@@ -1009,7 +1009,7 @@ function deleteHistory(index) {
     renderHistory();
 }
 
-function updateStreak() {
+async function updateStreak() {
 
     const today =
         new Date().toDateString();
