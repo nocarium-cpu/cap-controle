@@ -8,6 +8,36 @@ const controlsContainer = document.getElementById("controls");
 
 let controls = [];
 
+async function loadControls() {
+
+    try {
+
+        const response = await fetch(
+            "/api/controls",
+            {
+                credentials: "include"
+            }
+        );
+
+        if (!response.ok) {
+            console.error("Impossible de charger les contrôles.");
+            return;
+        }
+
+        controls = await response.json();
+
+        render();
+
+    } catch (error) {
+
+        console.error(
+            "Erreur chargement contrôles :",
+            error
+        );
+
+    }
+}
+
 document
     .getElementById("addBtn")
     .addEventListener("click", addControl);
