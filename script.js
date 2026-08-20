@@ -1421,3 +1421,194 @@ window.addEventListener(
         }
     }
 );
+
+/* ========================= */
+/* PARAMÈTRES */
+/* ========================= */
+
+function openSettings(){
+
+    const app = document.getElementById("app");
+    const settingsPage = document.getElementById("settingsPage");
+
+    if(!settingsPage) return;
+
+    app.style.display = "none";
+    settingsPage.style.display = "block";
+
+    loadSettings();
+}
+
+
+function closeSettings(){
+
+    const app = document.getElementById("app");
+    const settingsPage = document.getElementById("settingsPage");
+
+    if(!settingsPage) return;
+
+    settingsPage.style.display = "none";
+    app.style.display = "block";
+}
+
+
+function loadSettings(){
+
+    const usernameElement =
+        document.getElementById("settingsUsername");
+
+    const emailElement =
+        document.getElementById("settingsEmail");
+
+    const themeSelect =
+        document.getElementById("themeSelect");
+
+
+    /*
+     * Ces variables seront automatiquement
+     * récupérées si ton système de connexion
+     * utilise currentUser.
+     */
+
+    if(typeof currentUser !== "undefined" && currentUser){
+
+        if(usernameElement){
+            usernameElement.textContent =
+                currentUser.username || "Non renseigné";
+        }
+
+        if(emailElement){
+            emailElement.textContent =
+                currentUser.email || "Non renseigné";
+        }
+
+    }
+
+
+    const savedTheme =
+        localStorage.getItem("capControleTheme") || "light";
+
+    if(themeSelect){
+        themeSelect.value = savedTheme;
+    }
+
+}
+
+
+function editUsername(){
+
+    const newUsername =
+        prompt("Entre ton nouveau pseudo :");
+
+    if(!newUsername) return;
+
+    const username =
+        newUsername.trim();
+
+    if(username.length < 2){
+
+        alert("Le pseudo doit contenir au moins 2 caractères.");
+        return;
+
+    }
+
+    if(typeof currentUser !== "undefined" && currentUser){
+
+        currentUser.username = username;
+
+        localStorage.setItem(
+            "currentUser",
+            JSON.stringify(currentUser)
+        );
+
+        document.getElementById(
+            "settingsUsername"
+        ).textContent = username;
+
+        alert("Ton pseudo a été modifié.");
+
+    }
+
+}
+
+
+function changePassword(){
+
+    const newPassword =
+        prompt("Entre ton nouveau mot de passe :");
+
+    if(!newPassword) return;
+
+    if(newPassword.length < 6){
+
+        alert(
+            "Le mot de passe doit contenir au moins 6 caractères."
+        );
+
+        return;
+    }
+
+    /*
+     * Pour l'instant, on ne modifie pas réellement
+     * le mot de passe côté serveur.
+     *
+     * On branchera cette fonction sur ton système
+     * d'authentification actuel ensuite.
+     */
+
+    alert(
+        "La modification du mot de passe sera bientôt disponible."
+    );
+
+}
+
+
+function changeTheme(){
+
+    const themeSelect =
+        document.getElementById("themeSelect");
+
+    if(!themeSelect) return;
+
+    const theme =
+        themeSelect.value;
+
+    localStorage.setItem(
+        "capControleTheme",
+        theme
+    );
+
+
+    if(theme === "dark"){
+
+        document.body.classList.add("dark-theme");
+
+    }else{
+
+        document.body.classList.remove("dark-theme");
+
+    }
+
+}
+
+
+function deleteAccount(){
+
+    const confirmation =
+        confirm(
+            "⚠️ Es-tu sûr de vouloir supprimer ton compte ?\n\n" +
+            "Cette action est définitive."
+        );
+
+    if(!confirmation) return;
+
+    /*
+     * À connecter au serveur pour supprimer
+     * réellement le compte de la base de données.
+     */
+
+    alert(
+        "La suppression définitive du compte sera ajoutée avec le système serveur."
+    );
+
+}
