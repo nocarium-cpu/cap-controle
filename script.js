@@ -837,6 +837,50 @@ function renderHistory() {
         });
 }
 
+window.addEventListener("load", async () => {
+
+    try {
+
+        const response = await fetch(
+            "/me",
+            {
+                credentials: "include"
+            }
+        );
+
+        const data = await response.json();
+
+        if (data.loggedIn) {
+
+            document.getElementById("loginScreen")
+                .style.display = "none";
+
+            document.getElementById("app")
+                .style.display = "block";
+
+            await loadControls();
+
+        } else {
+
+            document.getElementById("loginScreen")
+                .style.display = "block";
+
+            document.getElementById("app")
+                .style.display = "none";
+
+        }
+
+    } catch (error) {
+
+        console.error(
+            "Erreur vérification session :",
+            error
+        );
+
+    }
+
+});
+
 function loadHistory(index) {
 
     const history =
