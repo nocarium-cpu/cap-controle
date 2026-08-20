@@ -535,13 +535,51 @@ function render() {
     });
 }
 
-function removeControl(index){
+async function removeControl(index) {
 
-    controls.splice(index,1);
+    const control = controls[index];
 
-    save();
+    if (!control || !control._id) {
+        alert("Contrôle introuvable.");
+        return;
+    }
 
-    render();
+    try {
+
+        const response = await fetch(
+            "/api/controls/" + control._id,
+            {
+                method: "DELETE",
+                credentials: "include"
+            }
+        );
+
+        const data =
+            await response.json();
+
+        if (!response.ok) {
+
+            alert(
+                data.error ||
+                "Impossible de supprimer le contrôle."
+            );
+
+            return;
+        }
+
+        controls.splice(index, 1);
+
+        render();
+
+    } catch (error) {
+
+        console.error(error);
+
+        alert(
+            "Impossible de contacter le serveur."
+        );
+
+    }
 }
 
 render();
