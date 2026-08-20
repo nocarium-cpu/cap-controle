@@ -1054,6 +1054,7 @@ function updateStreak() {
         "lastRevision",
         today
     );
+    await saveStats();
 }
 
 function renameHistory(index) {
