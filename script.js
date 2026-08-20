@@ -1,8 +1,7 @@
-let streak =
-    Number(localStorage.getItem("streak")) || 0;
+let streak = 0;
+let bestStreak = 0;
 
-let bestStreak =
-    Number(localStorage.getItem("bestStreak")) || 0;
+let history = [];
 
 const controlsContainer = document.getElementById("controls");
 
