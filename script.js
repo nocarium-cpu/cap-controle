@@ -1219,51 +1219,6 @@ function escapeHTML(value) {
 }
 
 /* ================================================= */
-/*                INITIALISATION                    */
-/* ================================================= */
-
-window.addEventListener(
-    "load",
-    async () => {
-        try {
-            const response =
-                await fetch("/me", {
-                    credentials: "include"
-                });
-
-            const data =
-                await response.json();
-
-            if (data.loggedIn) {
-                document.getElementById(
-                    "loginScreen"
-                ).style.display = "none";
-
-                document.getElementById(
-                    "app"
-                ).style.display = "block";
-
-                await loadControls();
-                await loadAccountData();
-            } else {
-                document.getElementById(
-                    "loginScreen"
-                ).style.display = "block";
-
-                document.getElementById(
-                    "app"
-                ).style.display = "none";
-            }
-        } catch (error) {
-            console.error(
-                "Erreur vérification session :",
-                error
-            );
-        }
-    }
-);
-
-/* ================================================= */
 /*                   MENU PROFIL                     */
 /* ================================================= */
 
@@ -1419,5 +1374,50 @@ logoutButton?.addEventListener(
 
         }
 
+    }
+);
+
+/* ================================================= */
+/*                INITIALISATION                    */
+/* ================================================= */
+
+window.addEventListener(
+    "load",
+    async () => {
+        try {
+            const response =
+                await fetch("/me", {
+                    credentials: "include"
+                });
+
+            const data =
+                await response.json();
+
+            if (data.loggedIn) {
+                document.getElementById(
+                    "loginScreen"
+                ).style.display = "none";
+
+                document.getElementById(
+                    "app"
+                ).style.display = "block";
+
+                await loadControls();
+                await loadAccountData();
+            } else {
+                document.getElementById(
+                    "loginScreen"
+                ).style.display = "block";
+
+                document.getElementById(
+                    "app"
+                ).style.display = "none";
+            }
+        } catch (error) {
+            console.error(
+                "Erreur vérification session :",
+                error
+            );
+        }
     }
 );
