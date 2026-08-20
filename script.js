@@ -273,6 +273,8 @@ async function register() {
         document.getElementById("app")
             .style.display = "block";
 
+        await loadControls();
+
     } catch (error) {
 
         console.error(error);
