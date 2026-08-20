@@ -3,8 +3,15 @@ import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
 import OpenAI from "openai";
+import crypto from "crypto";
+import path from "path";
+import { fileURLToPath } from "url";
 
 dotenv.config();
+
+/* ========================= */
+/* MongoDB */
+/* ========================= */
 
 const client = new MongoClient(
     process.env.MONGODB_URI
@@ -12,46 +19,852 @@ const client = new MongoClient(
 
 let db;
 
+/* ========================= */
+/* Express */
+/* ========================= */
+
 const app = express();
 
-app.use(cors());
 app.use(express.json());
 
-import path from "path";
-import { fileURLToPath } from "url";
+/*
+    Ton frontend est servi directement
+    par Express sur Render.
 
-const __filename = fileURLToPath(import.meta.url);
-const __dirname = path.dirname(__filename);
+    On évite donc le cors "*" avec
+    les cookies de session.
+*/
+app.use(cors({
+    origin: true,
+    credentials: true
+}));
 
-app.use(express.static(__dirname));
+/* ========================= */
+/* Fichiers du site */
+/* ========================= */
+
+const __filename =
+    fileURLToPath(import.meta.url);
+
+const __dirname =
+    path.dirname(__filename);
+
+app.use(
+    express.static(__dirname)
+);
+
+/* ========================= */
+/* OpenAI */
+/* ========================= */
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
 });
 
-app.post("/generate", async (req, res) => {
+/* ================================================= */
+/*                 UTILITAIRES COMPTES               */
+/* ================================================= */
 
-    console.log("Génération demandée");
+/*
+    Hash sécurisé du mot de passe
+    avec l'algorithme scrypt intégré à Node.js.
+*/
 
-    try {
+function hashPassword(password) {
 
-        const { course } = req.body;
+    return new Promise((resolve, reject) => {
 
-        if(!course || course.length > 10000){
-            return res.status(400).json({
-                error: "Cours trop long"
-            });
+        const salt =
+            crypto.randomBytes(16);
+
+        crypto.scrypt(
+            password,
+            salt,
+            64,
+            (error, derivedKey) => {
+
+                if (error) {
+                    reject(error);
+                    return;
+                }
+
+                resolve(
+                    salt.toString("hex")
+                    + ":"
+                    + derivedKey.toString("hex")
+                );
+
+            }
+        );
+
+    });
+
+}
+
+
+/*
+    Vérification du mot de passe.
+*/
+
+function verifyPassword(
+    password,
+    storedHash
+) {
+
+    return new Promise((resolve, reject) => {
+
+        const parts =
+            storedHash.split(":");
+
+        if (parts.length !== 2) {
+            resolve(false);
+            return;
         }
-        console.log("COURS REÇU :");
-        console.log(course);
 
-        const response =
-            await openai.chat.completions.create({
-                model: "gpt-4.1-mini",
-                messages: [
-    {
-        role: "system",
-        content: `
+        const salt =
+            Buffer.from(
+                parts[0],
+                "hex"
+            );
+
+        const originalHash =
+            Buffer.from(
+                parts[1],
+                "hex"
+            );
+
+        crypto.scrypt(
+            password,
+            salt,
+            64,
+            (error, derivedKey) => {
+
+                if (error) {
+                    reject(error);
+                    return;
+                }
+
+                resolve(
+                    crypto.timingSafeEqual(
+                        originalHash,
+                        derivedKey
+                    )
+                );
+
+            }
+        );
+
+    });
+
+}
+
+
+/*
+    Création d'un token de session.
+*/
+
+function createSessionToken() {
+
+    return crypto
+        .randomBytes(32)
+        .toString("hex");
+
+}
+
+
+/*
+    Hash du token avant de le mettre
+    dans MongoDB.
+*/
+
+function hashSessionToken(token) {
+
+    return crypto
+        .createHash("sha256")
+        .update(token)
+        .digest("hex");
+
+}
+
+
+/*
+    Récupérer le cookie de session.
+*/
+
+function getSessionToken(req) {
+
+    const cookieHeader =
+        req.headers.cookie;
+
+    if (!cookieHeader) {
+        return null;
+    }
+
+    const cookies =
+        cookieHeader
+            .split(";")
+            .map(cookie => cookie.trim());
+
+    const sessionCookie =
+        cookies.find(
+            cookie =>
+                cookie.startsWith(
+                    "capcontrole_session="
+                )
+        );
+
+    if (!sessionCookie) {
+        return null;
+    }
+
+    return decodeURIComponent(
+        sessionCookie.substring(
+            "capcontrole_session=".length
+        )
+    );
+
+}
+
+
+/*
+    Créer le cookie de session.
+*/
+
+function setSessionCookie(
+    res,
+    token
+) {
+
+    const isProduction =
+        process.env.NODE_ENV === "production";
+
+    const cookie =
+        [
+            `capcontrole_session=${encodeURIComponent(token)}`,
+            "HttpOnly",
+            "Path=/",
+            "SameSite=Lax",
+            "Max-Age=2592000"
+        ];
+
+    if (isProduction) {
+        cookie.push("Secure");
+    }
+
+    res.setHeader(
+        "Set-Cookie",
+        cookie.join("; ")
+    );
+
+}
+
+
+/*
+    Supprimer le cookie.
+*/
+
+function clearSessionCookie(res) {
+
+    res.setHeader(
+        "Set-Cookie",
+        "capcontrole_session=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0"
+    );
+
+}
+
+
+/* ================================================= */
+/*                    INSCRIPTION                    */
+/* ================================================= */
+
+app.post(
+    "/register",
+    async (req, res) => {
+
+        try {
+
+            const {
+                username,
+                email,
+                password
+            } = req.body;
+
+            /* Vérifications */
+
+            if (
+                !username ||
+                !email ||
+                !password
+            ) {
+
+                return res.status(400).json({
+                    success: false,
+                    error:
+                        "Tous les champs sont obligatoires."
+                });
+
+            }
+
+            const cleanUsername =
+                username.trim();
+
+            const cleanEmail =
+                email
+                    .trim()
+                    .toLowerCase();
+
+            if (
+                cleanUsername.length < 3
+            ) {
+
+                return res.status(400).json({
+                    success: false,
+                    error:
+                        "Le pseudo doit contenir au moins 3 caractères."
+                });
+
+            }
+
+            if (
+                cleanUsername.length > 30
+            ) {
+
+                return res.status(400).json({
+                    success: false,
+                    error:
+                        "Le pseudo est trop long."
+                });
+
+            }
+
+            if (
+                !/^[^\s@]+@[^\s@]+\.[^\s@]+$/
+                    .test(cleanEmail)
+            ) {
+
+                return res.status(400).json({
+                    success: false,
+                    error:
+                        "Adresse e-mail invalide."
+                });
+
+            }
+
+            if (
+                password.length < 8
+            ) {
+
+                return res.status(400).json({
+                    success: false,
+                    error:
+                        "Le mot de passe doit contenir au moins 8 caractères."
+                });
+
+            }
+
+            const users =
+                db.collection("users");
+
+            /* Vérifier si l'e-mail existe */
+
+            const existingEmail =
+                await users.findOne({
+                    email: cleanEmail
+                });
+
+            if (existingEmail) {
+
+                return res.status(409).json({
+                    success: false,
+                    error:
+                        "Cette adresse e-mail est déjà utilisée."
+                });
+
+            }
+
+            /* Vérifier si le pseudo existe */
+
+            const existingUsername =
+                await users.findOne({
+                    usernameLower:
+                        cleanUsername.toLowerCase()
+                });
+
+            if (existingUsername) {
+
+                return res.status(409).json({
+                    success: false,
+                    error:
+                        "Ce pseudo est déjà utilisé."
+                });
+
+            }
+
+            /* Hash du mot de passe */
+
+            const passwordHash =
+                await hashPassword(
+                    password
+                );
+
+            /* Créer l'utilisateur */
+
+            const user = {
+
+                username:
+                    cleanUsername,
+
+                usernameLower:
+                    cleanUsername.toLowerCase(),
+
+                email:
+                    cleanEmail,
+
+                passwordHash,
+
+                createdAt:
+                    new Date()
+
+            };
+
+            const result =
+                await users.insertOne(user);
+
+            /* Créer automatiquement une session */
+
+            const token =
+                createSessionToken();
+
+            const tokenHash =
+                hashSessionToken(token);
+
+            await db
+                .collection("sessions")
+                .insertOne({
+
+                    tokenHash,
+
+                    userId:
+                        result.insertedId,
+
+                    createdAt:
+                        new Date(),
+
+                    expiresAt:
+                        new Date(
+                            Date.now()
+                            + 30 * 24 * 60 * 60 * 1000
+                        )
+
+                });
+
+            setSessionCookie(
+                res,
+                token
+            );
+
+            res.json({
+
+                success: true,
+
+                user: {
+
+                    id:
+                        result.insertedId,
+
+                    username:
+                        cleanUsername,
+
+                    email:
+                        cleanEmail
+
+                }
+
+            });
+
+        } catch (error) {
+
+            console.error(
+                "Erreur inscription :",
+                error
+            );
+
+            res.status(500).json({
+
+                success: false,
+
+                error:
+                    "Erreur serveur."
+
+            });
+
+        }
+
+    }
+);
+
+
+/* ================================================= */
+/*                     CONNEXION                     */
+/* ================================================= */
+
+app.post(
+    "/login",
+    async (req, res) => {
+
+        try {
+
+            const {
+                email,
+                password
+            } = req.body;
+
+            if (
+                !email ||
+                !password
+            ) {
+
+                return res.status(400).json({
+                    success: false,
+                    error:
+                        "E-mail et mot de passe obligatoires."
+                });
+
+            }
+
+            const cleanEmail =
+                email
+                    .trim()
+                    .toLowerCase();
+
+            const user =
+                await db
+                    .collection("users")
+                    .findOne({
+                        email:
+                            cleanEmail
+                    });
+
+            if (!user) {
+
+                return res.status(401).json({
+                    success: false,
+                    error:
+                        "E-mail ou mot de passe incorrect."
+                });
+
+            }
+
+            const valid =
+                await verifyPassword(
+                    password,
+                    user.passwordHash
+                );
+
+            if (!valid) {
+
+                return res.status(401).json({
+                    success: false,
+                    error:
+                        "E-mail ou mot de passe incorrect."
+                });
+
+            }
+
+            /* Nouvelle session */
+
+            const token =
+                createSessionToken();
+
+            const tokenHash =
+                hashSessionToken(token);
+
+            await db
+                .collection("sessions")
+                .insertOne({
+
+                    tokenHash,
+
+                    userId:
+                        user._id,
+
+                    createdAt:
+                        new Date(),
+
+                    expiresAt:
+                        new Date(
+                            Date.now()
+                            + 30 * 24 * 60 * 60 * 1000
+                        )
+
+                });
+
+            setSessionCookie(
+                res,
+                token
+            );
+
+            res.json({
+
+                success: true,
+
+                user: {
+
+                    id:
+                        user._id,
+
+                    username:
+                        user.username,
+
+                    email:
+                        user.email
+
+                }
+
+            });
+
+        } catch (error) {
+
+            console.error(
+                "Erreur connexion :",
+                error
+            );
+
+            res.status(500).json({
+
+                success: false,
+
+                error:
+                    "Erreur serveur."
+
+            });
+
+        }
+
+    }
+);
+
+
+/* ================================================= */
+/*                    UTILISATEUR                    */
+/* ================================================= */
+
+app.get(
+    "/me",
+    async (req, res) => {
+
+        try {
+
+            const token =
+                getSessionToken(req);
+
+            if (!token) {
+
+                return res.json({
+                    loggedIn: false
+                });
+
+            }
+
+            const tokenHash =
+                hashSessionToken(token);
+
+            const session =
+                await db
+                    .collection("sessions")
+                    .findOne({
+                        tokenHash
+                    });
+
+            if (!session) {
+
+                return res.json({
+                    loggedIn: false
+                });
+
+            }
+
+            /* Session expirée */
+
+            if (
+                session.expiresAt <
+                new Date()
+            ) {
+
+                await db
+                    .collection("sessions")
+                    .deleteOne({
+                        _id:
+                            session._id
+                    });
+
+                clearSessionCookie(res);
+
+                return res.json({
+                    loggedIn: false
+                });
+
+            }
+
+            const user =
+                await db
+                    .collection("users")
+                    .findOne({
+                        _id:
+                            session.userId
+                    });
+
+            if (!user) {
+
+                clearSessionCookie(res);
+
+                return res.json({
+                    loggedIn: false
+                });
+
+            }
+
+            res.json({
+
+                loggedIn: true,
+
+                user: {
+
+                    id:
+                        user._id,
+
+                    username:
+                        user.username,
+
+                    email:
+                        user.email
+
+                }
+
+            });
+
+        } catch (error) {
+
+            console.error(
+                "Erreur /me :",
+                error
+            );
+
+            res.status(500).json({
+                error:
+                    "Erreur serveur."
+            });
+
+        }
+
+    }
+);
+
+
+/* ================================================= */
+/*                    DÉCONNEXION                    */
+/* ================================================= */
+
+app.post(
+    "/logout",
+    async (req, res) => {
+
+        try {
+
+            const token =
+                getSessionToken(req);
+
+            if (token) {
+
+                const tokenHash =
+                    hashSessionToken(token);
+
+                await db
+                    .collection("sessions")
+                    .deleteOne({
+                        tokenHash
+                    });
+
+            }
+
+            clearSessionCookie(res);
+
+            res.json({
+                success: true
+            });
+
+        } catch (error) {
+
+            console.error(
+                "Erreur déconnexion :",
+                error
+            );
+
+            res.status(500).json({
+                error:
+                    "Erreur serveur."
+            });
+
+        }
+
+    }
+);
+
+
+/* ================================================= */
+/*                       IA                          */
+/* ================================================= */
+
+app.post(
+    "/generate",
+    async (req, res) => {
+
+        console.log(
+            "Génération demandée"
+        );
+
+        try {
+
+            const {
+                course
+            } = req.body;
+
+            if (
+                !course ||
+                course.length > 10000
+            ) {
+
+                return res.status(400).json({
+
+                    error:
+                        "Cours trop long"
+
+                });
+
+            }
+
+            console.log(
+                "COURS REÇU :"
+            );
+
+            console.log(course);
+
+            const response =
+                await openai
+                    .chat
+                    .completions
+                    .create({
+
+                        model:
+                            "gpt-4.1-mini",
+
+                        messages: [
+
+                            {
+                                role:
+                                    "system",
+
+                                content: `
 Tu es un professeur.
 
 Réponds UNIQUEMENT avec du JSON valide.
@@ -74,38 +887,167 @@ Format :
 
 Aucun texte avant ou après le JSON.
 `
-    },
-    {
-        role: "user",
-        content: course
-    }
-]
+                            },
+
+                            {
+                                role:
+                                    "user",
+
+                                content:
+                                    course
+                            }
+
+                        ]
+
+                    });
+
+            const content =
+                response
+                    .choices[0]
+                    .message
+                    .content;
+
+            console.log(content);
+
+            const cleanContent =
+                content
+                    .replace(
+                        /```json/g,
+                        ""
+                    )
+                    .replace(
+                        /```/g,
+                        ""
+                    )
+                    .trim();
+
+            res.json(
+                JSON.parse(
+                    cleanContent
+                )
+            );
+
+        } catch (error) {
+
+            console.error(error);
+
+            res.status(500).json({
+
+                error:
+                    error.message
+
             });
 
-        const content =
-    response.choices[0].message.content;
-
-console.log(content);
-
-const cleanContent = content
-    .replace(/```json/g, "")
-    .replace(/```/g, "")
-    .trim();
-
-res.json(
-    JSON.parse(cleanContent)
-);
-
-    } catch (error) {
-
-        console.error(error);
-
-        res.status(500).json({
-            error: error.message
-        });
+        }
 
     }
-});
+);
+
+
+/* ================================================= */
+/*                    PARTAGE                        */
+/* ================================================= */
+
+app.post(
+    "/share",
+    async (req, res) => {
+
+        try {
+
+            const code =
+                Math.random()
+                    .toString(36)
+                    .substring(2, 8)
+                    .toUpperCase();
+
+            await db
+                .collection(
+                    "sharedSheets"
+                )
+                .insertOne({
+
+                    code,
+
+                    ...req.body,
+
+                    createdAt:
+                        new Date()
+
+                });
+
+            res.json({
+                code
+            });
+
+        } catch (error) {
+
+            console.error(error);
+
+            res.status(500).json({
+
+                error:
+                    "Erreur partage"
+
+            });
+
+        }
+
+    }
+);
+
+
+app.get(
+    "/share/:code",
+    async (req, res) => {
+
+        try {
+
+            const sheet =
+                await db
+                    .collection(
+                        "sharedSheets"
+                    )
+                    .findOne({
+
+                        code:
+                            req.params.code
+                                .toUpperCase()
+
+                    });
+
+            if (!sheet) {
+
+                return res.status(404).json({
+
+                    error:
+                        "Fiche introuvable"
+
+                });
+
+            }
+
+            res.json(sheet);
+
+        } catch (error) {
+
+            console.error(error);
+
+            res.status(500).json({
+
+                error:
+                    "Erreur serveur"
+
+            });
+
+        }
+
+    }
+);
+
+
+/* ================================================= */
+/*                 DÉMARRAGE SERVEUR                 */
+/* ================================================= */
 
 async function startServer() {
 
@@ -114,21 +1056,26 @@ async function startServer() {
         await client.connect();
 
         db =
-            client.db("capcontrole");
+            client.db(
+                "capcontrole"
+            );
 
         console.log(
             "MongoDB connecté"
         );
 
-        app.listen(3001, () => {
+        app.listen(
+            3001,
+            () => {
 
-            console.log(
-                "Serveur lancé sur http://localhost:3001"
-            );
+                console.log(
+                    "Serveur lancé sur http://localhost:3001"
+                );
 
-        });
+            }
+        );
 
-    } catch(error) {
+    } catch (error) {
 
         console.error(
             "Erreur MongoDB :",
@@ -136,100 +1083,7 @@ async function startServer() {
         );
 
     }
+
 }
 
-app.post("/share", async (req, res) => {
-
-    try {
-
-        const code =
-            Math.random()
-            .toString(36)
-            .substring(2, 8)
-            .toUpperCase();
-
-        await db
-            .collection("sharedSheets")
-            .insertOne({
-                code,
-                ...req.body,
-                createdAt: new Date()
-            });
-
-        res.json({ code });
-
-    } catch(error) {
-
-        console.error(error);
-
-        res.status(500).json({
-            error: "Erreur partage"
-        });
-
-    }
-
-});
-
-app.get("/share/:code", async (req, res) => {
-
-    try {
-
-        const sheet =
-            await db
-                .collection("sharedSheets")
-                .findOne({
-                    code:
-                        req.params.code
-                            .toUpperCase()
-                });
-
-        if(!sheet){
-
-            return res.status(404).json({
-                error: "Fiche introuvable"
-            });
-
-        }
-
-        res.json(sheet);
-
-    } catch(error){
-
-        console.error(error);
-
-        res.status(500).json({
-            error: "Erreur serveur"
-        });
-
-    }
-
-});
-
 startServer();
-
-app.use(cors({
-    origin: "*"
-}));
-
-app.post("/login", (req, res) => {
-
-    const { password } = req.body;
-
-    if (
-        password ===
-        process.env.APP_PASSWORD
-    ) {
-
-        res.json({
-            success: true
-        });
-
-    } else {
-
-        res.json({
-            success: false
-        });
-
-    }
-
-});
