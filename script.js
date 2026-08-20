@@ -1,12 +1,11 @@
 let streak = 0;
 let bestStreak = 0;
 
+let controls = [];
 let history = [];
 
 const controlsContainer =
     document.getElementById("controls");
-
-let controls = [];
 
 
 /* ================================================= */
@@ -25,16 +24,15 @@ async function loadControls() {
         );
 
         if (!response.ok) {
-
-            console.error(
-                "Impossible de charger les contrôles."
-            );
-
+            console.error("Impossible de charger les contrôles.");
             return;
         }
 
-        controls =
-            await response.json();
+        controls = await response.json();
+
+        if (!Array.isArray(controls)) {
+            controls = [];
+        }
 
         render();
 
@@ -46,6 +44,7 @@ async function loadControls() {
         );
 
     }
+
 }
 
 
@@ -78,9 +77,7 @@ async function addControl() {
 
     if (!subject || !chapter || !date) {
 
-        alert(
-            "Remplis tous les champs."
-        );
+        alert("Remplis tous les champs.");
 
         return;
     }
@@ -121,23 +118,13 @@ async function addControl() {
             return;
         }
 
-        controls.push(
-            data.control
-        );
+        controls.push(data.control);
 
         render();
 
-        document
-            .getElementById("subject")
-            .value = "";
-
-        document
-            .getElementById("chapter")
-            .value = "";
-
-        document
-            .getElementById("date")
-            .value = "";
+        document.getElementById("subject").value = "";
+        document.getElementById("chapter").value = "";
+        document.getElementById("date").value = "";
 
     } catch (error) {
 
@@ -148,20 +135,17 @@ async function addControl() {
         );
 
     }
+
 }
 
 
 /* ================================================= */
-/*                DONNÉES DU COMPTE                  */
+/*                  DONNÉES COMPTE                   */
 /* ================================================= */
 
 async function loadAccountData() {
 
     try {
-
-        /* ========================= */
-        /* Série + record             */
-        /* ========================= */
 
         const statsResponse =
             await fetch(
@@ -183,11 +167,6 @@ async function loadAccountData() {
                 Number(stats.bestStreak) || 0;
 
         }
-
-
-        /* ========================= */
-        /* Historique                 */
-        /* ========================= */
 
         const historyResponse =
             await fetch(
@@ -214,7 +193,6 @@ async function loadAccountData() {
         }
 
         render();
-
         renderHistory();
 
     } catch (error) {
@@ -273,19 +251,8 @@ async function saveStats() {
 }
 
 
-/* Ancienne fonction conservée pour compatibilité */
-function save() {
-
-    localStorage.setItem(
-        "capControle",
-        JSON.stringify(controls)
-    );
-
-}
-
-
 /* ================================================= */
-/*                    DATES                          */
+/*                     DATES                         */
 /* ================================================= */
 
 function getDaysLeft(date) {
@@ -300,17 +267,18 @@ function getDaysLeft(date) {
         0
     );
 
-    const [
-        year,
-        month,
-        day
-    ] = date.split("-");
+    const parts =
+        String(date).split("-");
+
+    if (parts.length !== 3) {
+        return 0;
+    }
 
     const examDate =
         new Date(
-            year,
-            month - 1,
-            day
+            Number(parts[0]),
+            Number(parts[1]) - 1,
+            Number(parts[2])
         );
 
     examDate.setHours(
@@ -320,11 +288,10 @@ function getDaysLeft(date) {
         0
     );
 
-    const diff =
-        examDate - today;
-
     return Math.round(
-        diff /
+        (
+            examDate - today
+        ) /
         (1000 * 60 * 60 * 24)
     );
 
@@ -333,40 +300,12 @@ function getDaysLeft(date) {
 
 function formatDate(dateString) {
 
-    const today =
-        new Date();
-
-    today.setHours(
-        0,
-        0,
-        0,
-        0
-    );
-
     const date =
         new Date(dateString);
 
-    date.setHours(
-        0,
-        0,
-        0,
-        0
-    );
-
-    const diffDays =
-        Math.round(
-            (date - today) /
-            (1000 * 60 * 60 * 24)
-        );
-
-    if (diffDays === 0)
-        return "Aujourd'hui";
-
-    if (diffDays === 1)
-        return "Demain";
-
-    if (diffDays === -1)
-        return "Hier";
+    if (Number.isNaN(date.getTime())) {
+        return dateString;
+    }
 
     return date.toLocaleDateString(
         "fr-FR",
@@ -380,7 +319,7 @@ function formatDate(dateString) {
 
 
 /* ================================================= */
-/*                CONNEXION                          */
+/*                    CONNEXION                      */
 /* ================================================= */
 
 async function login() {
@@ -398,9 +337,7 @@ async function login() {
 
     if (!email || !password) {
 
-        alert(
-            "Remplis tous les champs."
-        );
+        alert("Remplis tous les champs.");
 
         return;
     }
@@ -449,7 +386,6 @@ async function login() {
             .style.display = "block";
 
         await loadControls();
-
         await loadAccountData();
 
     } catch (error) {
@@ -466,7 +402,7 @@ async function login() {
 
 
 /* ================================================= */
-/*                INSCRIPTION                        */
+/*                   INSCRIPTION                     */
 /* ================================================= */
 
 async function register() {
@@ -508,16 +444,12 @@ async function register() {
         !confirmPassword
     ) {
 
-        alert(
-            "Remplis tous les champs."
-        );
+        alert("Remplis tous les champs.");
 
         return;
     }
 
-    if (
-        password !== confirmPassword
-    ) {
+    if (password !== confirmPassword) {
 
         alert(
             "Les mots de passe ne correspondent pas."
@@ -571,7 +503,6 @@ async function register() {
             .style.display = "block";
 
         await loadControls();
-
         await loadAccountData();
 
     } catch (error) {
@@ -637,9 +568,7 @@ async function revise(index, minutes) {
         !control._id
     ) {
 
-        alert(
-            "Contrôle introuvable."
-        );
+        alert("Contrôle introuvable.");
 
         return;
     }
@@ -647,8 +576,8 @@ async function revise(index, minutes) {
     const newProgress =
         Math.min(
             100,
-            (control.progress || 0)
-            + minutes
+            (Number(control.progress) || 0)
+            + Number(minutes)
         );
 
     try {
@@ -708,35 +637,20 @@ async function revise(index, minutes) {
 
 
 /* ================================================= */
-/*                    AFFICHAGE                      */
+/*                     AFFICHAGE                     */
 /* ================================================= */
 
 function render() {
 
-    controls.forEach(
-        control => {
-
-            if (
-                control.progress ===
-                undefined
-            ) {
-
-                control.progress = 0;
-
-            }
-
-        }
-    );
+    if (!controlsContainer) {
+        return;
+    }
 
     controls.sort(
         (a, b) =>
             new Date(a.date) -
             new Date(b.date)
     );
-
-    if (!controlsContainer) {
-        return;
-    }
 
     controlsContainer.innerHTML = "";
 
@@ -757,8 +671,8 @@ function render() {
 
     const futureControls =
         controls.filter(
-            c =>
-                getDaysLeft(c.date) >= 0
+            control =>
+                getDaysLeft(control.date) >= 0
         );
 
     const nextControl =
@@ -769,44 +683,32 @@ function render() {
         dashboard.innerHTML = `
 
             <div class="stat">
-
                 <div class="stat-number">
                     ${controls.length}
                 </div>
-
                 <div class="stat-label">
                     Contrôles
                 </div>
-
             </div>
 
-
             <div class="stat">
-
                 <div class="stat-number">
-
                     ${
                         futureControls.filter(
-                            c =>
+                            control =>
                                 getDaysLeft(
-                                    c.date
+                                    control.date
                                 ) <= 7
                         ).length
                     }
-
                 </div>
-
                 <div class="stat-label">
                     Cette semaine
                 </div>
-
             </div>
 
-
             <div class="stat">
-
                 <div class="stat-number">
-
                     ${
                         nextControl
                             ? getDaysLeft(
@@ -814,45 +716,33 @@ function render() {
                             )
                             : "-"
                     }
-
                 </div>
-
                 <div class="stat-label">
                     Jours restants
                 </div>
-
             </div>
 
-
             <div class="stat">
-
                 <div class="stat-number">
                     ${streak}
                 </div>
-
                 <div class="stat-label">
                     Série
                 </div>
-
             </div>
 
-
             <div class="stat">
-
                 <div class="stat-number">
                     ${bestStreak}
                 </div>
-
                 <div class="stat-label">
                     Record
                 </div>
-
             </div>
 
         `;
 
     }
-
 
     if (nextExamCard) {
 
@@ -861,11 +751,15 @@ function render() {
             nextExamCard.innerHTML = `
 
                 <h3>
-                    ${nextControl.subject}
+                    ${escapeHTML(
+                        nextControl.subject
+                    )}
                 </h3>
 
                 <p>
-                    ${nextControl.chapter}
+                    ${escapeHTML(
+                        nextControl.chapter
+                    )}
                 </p>
 
                 <p>
@@ -881,25 +775,21 @@ function render() {
         } else {
 
             nextExamCard.innerHTML = `
-                <h2>
-                    Aucun contrôle prévu
-                </h2>
+                <h2>Aucun contrôle prévu</h2>
             `;
 
         }
 
     }
 
-
     const revisionsNeeded =
         futureControls
             .filter(
-                c =>
-                    (c.progress || 0)
+                control =>
+                    (Number(control.progress) || 0)
                     < 100
             )
             .slice(0, 3);
-
 
     if (todayRevision) {
 
@@ -919,16 +809,23 @@ function render() {
                         <div class="today-item">
 
                             <strong>
-                                ${control.subject}
+                                ${escapeHTML(
+                                    control.subject
+                                )}
                             </strong>
 
                             <p>
-                                ${control.chapter}
+                                ${escapeHTML(
+                                    control.chapter
+                                )}
                             </p>
 
                             <p>
-                                ${control.progress || 0}%
-                                terminé
+                                ${
+                                    Number(
+                                        control.progress
+                                    ) || 0
+                                }% terminé
                             </p>
 
                         </div>
@@ -950,7 +847,6 @@ function render() {
 
     }
 
-
     controls.forEach(
         (control, index) => {
 
@@ -963,33 +859,31 @@ function render() {
                 "normal";
 
             if (daysLeft <= 3) {
-
-                className =
-                    "urgent";
-
-            } else if (
-                daysLeft <= 7
-            ) {
-
-                className =
-                    "soon";
-
+                className = "urgent";
+            } else if (daysLeft <= 7) {
+                className = "soon";
             }
 
             const progress =
-                control.progress || 0;
+                Number(
+                    control.progress
+                ) || 0;
 
             controlsContainer.innerHTML += `
 
                 <div class="card control">
 
                     <h3>
-                        ${control.subject}
+                        ${escapeHTML(
+                            control.subject
+                        )}
                     </h3>
 
                     <p>
                         Chapitre :
-                        ${control.chapter}
+                        ${escapeHTML(
+                            control.chapter
+                        )}
                     </p>
 
                     <p>
@@ -999,14 +893,14 @@ function render() {
                         )}
                     </p>
 
-                    <p
-                        class="days ${className}"
-                    >
+                    <p class="days ${className}">
 
                         ${
-                            daysLeft === 1
+                            daysLeft === 0
                                 ? "Contrôle aujourd'hui"
-                                : `${daysLeft} jour(s) restant(s)`
+                                : daysLeft === 1
+                                    ? "Contrôle demain"
+                                    : `${daysLeft} jour(s) restant(s)`
                         }
 
                     </p>
@@ -1016,9 +910,7 @@ function render() {
                         ${progress}%
                     </p>
 
-                    <select
-                        id="revisionTime${index}"
-                    >
+                    <select id="revisionTime${index}">
 
                         <option value="5">
                             5 min
@@ -1075,7 +967,7 @@ function render() {
 
 
 /* ================================================= */
-/*               SUPPRESSION CONTRÔLE                */
+/*                SUPPRESSION CONTRÔLE               */
 /* ================================================= */
 
 async function removeControl(index) {
@@ -1088,9 +980,7 @@ async function removeControl(index) {
         !control._id
     ) {
 
-        alert(
-            "Contrôle introuvable."
-        );
+        alert("Contrôle introuvable.");
 
         return;
     }
@@ -1141,7 +1031,7 @@ async function removeControl(index) {
 
 
 /* ================================================= */
-/*                FICHES IA                          */
+/*                  FICHE IA                         */
 /* ================================================= */
 
 async function generateRevisionSheet() {
@@ -1170,33 +1060,21 @@ async function generateRevisionSheet() {
     if (course.length > 10000) {
 
         resultDiv.innerHTML = `
-
             <div class="ai-card error">
-
-                Le cours dépasse
-                10 000 caractères.
-
+                Le cours dépasse 10 000 caractères.
             </div>
-
         `;
 
         return;
     }
 
     resultDiv.innerHTML = `
-
         <div class="loading">
             Génération de la fiche...
         </div>
-
     `;
 
     try {
-
-        console.log(
-            "COURS ENVOYÉ :",
-            course
-        );
 
         const response =
             await fetch(
@@ -1222,26 +1100,12 @@ async function generateRevisionSheet() {
 
         if (!response.ok) {
 
-            resultDiv.innerHTML = `
+            throw new Error(
+                data.error ||
+                "Erreur génération."
+            );
 
-                <div class="ai-card error">
-
-                    ${
-                        data.error ||
-                        "Erreur lors de la génération."
-                    }
-
-                </div>
-
-            `;
-
-            return;
         }
-
-
-        /* ========================= */
-        /* Sauvegarde compte          */
-        /* ========================= */
 
         const historyResponse =
             await fetch(
@@ -1268,12 +1132,11 @@ async function generateRevisionSheet() {
 
         if (!historyResponse.ok) {
 
-            alert(
+            throw new Error(
                 historyData.error ||
                 "Impossible de sauvegarder la fiche."
             );
 
-            return;
         }
 
         if (historyData.history) {
@@ -1286,112 +1149,124 @@ async function generateRevisionSheet() {
 
         renderHistory();
 
-
-        resultDiv.innerHTML = `
-
-            <div class="ai-card">
-
-                <h2>
-                    Résumé
-                </h2>
-
-                <p>
-                    ${data.summary}
-                </p>
-
-            </div>
-
-
-            <div class="ai-card">
-
-                <h2>
-                    Notions clés
-                </h2>
-
-                <ul>
-
-                    ${
-                        Array.isArray(
-                            data.keyPoints
-                        )
-                            ? data.keyPoints
-                                .map(
-                                    point =>
-                                        `<li>${point}</li>`
-                                )
-                                .join("")
-                            : ""
-                    }
-
-                </ul>
-
-            </div>
-
-
-            <div class="ai-card">
-
-                <h2>
-                    Quiz
-                </h2>
-
-                ${
-                    Array.isArray(data.quiz)
-                        ? data.quiz
-                            .map(
-                                (q, index) => `
-
-                                    <div
-                                        class="quiz-card"
-                                    >
-
-                                        <h3>
-                                            Question
-                                            ${index + 1}
-                                        </h3>
-
-                                        <p>
-                                            ${q.question}
-                                        </p>
-
-                                        <details>
-
-                                            <summary>
-                                                Voir la réponse
-                                            </summary>
-
-                                            <p>
-                                                ${q.answer}
-                                            </p>
-
-                                        </details>
-
-                                    </div>
-
-                                `
-                            )
-                            .join("")
-                        : ""
-                }
-
-            </div>
-
-        `;
+        displayRevisionSheet(data);
 
     } catch (error) {
 
         console.error(error);
 
         resultDiv.innerHTML = `
-
             <div class="ai-card error">
-
-                Erreur lors de la génération.
-
+                ${escapeHTML(
+                    error.message ||
+                    "Erreur lors de la génération."
+                )}
             </div>
-
         `;
 
     }
+
+}
+
+
+function displayRevisionSheet(data) {
+
+    const resultDiv =
+        document.getElementById(
+            "aiResult"
+        );
+
+    resultDiv.innerHTML = `
+
+        <div class="ai-card">
+
+            <h2>
+                Résumé
+            </h2>
+
+            <p>
+                ${escapeHTML(
+                    data.summary || ""
+                )}
+            </p>
+
+        </div>
+
+        <div class="ai-card">
+
+            <h2>
+                Notions clés
+            </h2>
+
+            <ul>
+
+                ${
+                    Array.isArray(
+                        data.keyPoints
+                    )
+                        ? data.keyPoints
+                            .map(
+                                point =>
+                                    `<li>${escapeHTML(point)}</li>`
+                            )
+                            .join("")
+                        : ""
+                }
+
+            </ul>
+
+        </div>
+
+        <div class="ai-card">
+
+            <h2>
+                Quiz
+            </h2>
+
+            ${
+                Array.isArray(data.quiz)
+                    ? data.quiz
+                        .map(
+                            (question, index) => `
+
+                                <div class="quiz-card">
+
+                                    <h3>
+                                        Question
+                                        ${index + 1}
+                                    </h3>
+
+                                    <p>
+                                        ${escapeHTML(
+                                            question.question
+                                        )}
+                                    </p>
+
+                                    <details>
+
+                                        <summary>
+                                            Voir la réponse
+                                        </summary>
+
+                                        <p>
+                                            ${escapeHTML(
+                                                question.answer
+                                            )}
+                                        </p>
+
+                                    </details>
+
+                                </div>
+
+                            `
+                        )
+                        .join("")
+                    : ""
+            }
+
+        </div>
+
+    `;
 
 }
 
@@ -1425,37 +1300,15 @@ function renderHistory() {
 
     const filtered =
         history.filter(
-            item => {
-
-                const course =
-                    typeof item.course ===
-                    "string"
-                        ? item.course
-                        : "";
-
-                return course
+            item =>
+                String(
+                    item.course || ""
+                )
                     .toLowerCase()
-                    .includes(search);
-
-            }
+                    .includes(search)
         );
 
     historyList.innerHTML = "";
-
-
-    if (!filtered.length) {
-
-        historyList.innerHTML = `
-
-            <p class="empty-history">
-                Aucune fiche enregistrée.
-            </p>
-
-        `;
-
-        return;
-    }
-
 
     filtered.forEach(
         item => {
@@ -1465,20 +1318,22 @@ function renderHistory() {
 
             historyList.innerHTML += `
 
-                <div class="history-item">
+                <div class="history-card">
 
-                    <h3>
-                        ${escapeHtml(
-                            item.course
-                        )}
-                    </h3>
+                    <div class="history-info">
 
-                    <div
-                        class="history-buttons"
-                    >
+                        <strong>
+                            ${escapeHTML(
+                                item.course ||
+                                "Fiche sans nom"
+                            )}
+                        </strong>
+
+                    </div>
+
+                    <div class="history-actions">
 
                         <button
-                            type="button"
                             onclick="
                                 loadHistory(
                                     ${realIndex}
@@ -1489,7 +1344,6 @@ function renderHistory() {
                         </button>
 
                         <button
-                            type="button"
                             onclick="
                                 renameHistory(
                                     ${realIndex}
@@ -1500,7 +1354,6 @@ function renderHistory() {
                         </button>
 
                         <button
-                            type="button"
                             onclick="
                                 shareHistory(
                                     ${realIndex}
@@ -1511,7 +1364,7 @@ function renderHistory() {
                         </button>
 
                         <button
-                            type="button"
+                            class="delete-history-btn"
                             onclick="
                                 deleteHistory(
                                     ${realIndex}
@@ -1533,35 +1386,8 @@ function renderHistory() {
 }
 
 
-function escapeHtml(value) {
-
-    return String(value)
-        .replace(
-            /&/g,
-            "&amp;"
-        )
-        .replace(
-            /</g,
-            "&lt;"
-        )
-        .replace(
-            />/g,
-            "&gt;"
-        )
-        .replace(
-            /"/g,
-            "&quot;"
-        )
-        .replace(
-            /'/g,
-            "&#039;"
-        );
-
-}
-
-
 /* ================================================= */
-/*                    OUVRIR                         */
+/*                 OUVRIR HISTORIQUE                 */
 /* ================================================= */
 
 function loadHistory(index) {
@@ -1569,7 +1395,7 @@ function loadHistory(index) {
     const item =
         history[index];
 
-    if (!item) {
+    if (!item || !item.result) {
 
         alert(
             "Fiche introuvable."
@@ -1578,116 +1404,112 @@ function loadHistory(index) {
         return;
     }
 
-    const data =
-        item.result;
-
-    if (!data) {
-
-        alert(
-            "Cette fiche est vide."
-        );
-
-        return;
-    }
+    displayRevisionSheet(
+        item.result
+    );
 
     const resultDiv =
         document.getElementById(
             "aiResult"
         );
 
-    if (!resultDiv) {
+    if (resultDiv) {
+
+        resultDiv.scrollIntoView({
+            behavior: "smooth",
+            block: "start"
+        });
+
+    }
+
+}
+
+
+/* ================================================= */
+/*                  RENOMMER                         */
+/* ================================================= */
+
+async function renameHistory(index) {
+
+    const item =
+        history[index];
+
+    if (
+        !item ||
+        !item._id
+    ) {
+
+        alert(
+            "Fiche introuvable."
+        );
+
         return;
     }
 
-    resultDiv.innerHTML = `
+    const newName =
+        prompt(
+            "Nouveau nom de la fiche :",
+            item.course
+        );
 
-        <div class="ai-card">
+    if (
+        !newName ||
+        !newName.trim()
+    ) {
 
-            <h2>
-                Résumé
-            </h2>
+        return;
+    }
 
-            <p>
-                ${data.summary || ""}
-            </p>
+    try {
 
-        </div>
+        const response =
+            await fetch(
+                "/api/history/" +
+                item._id,
+                {
+                    method: "PUT",
 
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
 
-        <div class="ai-card">
+                    credentials: "include",
 
-            <h2>
-                Notions clés
-            </h2>
-
-            <ul>
-
-                ${
-                    Array.isArray(
-                        data.keyPoints
-                    )
-                        ? data.keyPoints
-                            .map(
-                                p =>
-                                    `<li>${p}</li>`
-                            )
-                            .join("")
-                        : ""
+                    body: JSON.stringify({
+                        course:
+                            newName.trim()
+                    })
                 }
+            );
 
-            </ul>
+        const data =
+            await response.json();
 
-        </div>
+        if (!response.ok) {
 
+            alert(
+                data.error ||
+                "Impossible de renommer la fiche."
+            );
 
-        <div class="ai-card">
+            return;
+        }
 
-            <h2>
-                Quiz
-            </h2>
+        history[index] =
+            data.history;
 
-            ${
-                Array.isArray(data.quiz)
-                    ? data.quiz
-                        .map(
-                            (q, index) => `
+        renderHistory();
 
-                                <div
-                                    class="quiz-card"
-                                >
+    } catch (error) {
 
-                                    <h3>
-                                        Question
-                                        ${index + 1}
-                                    </h3>
+        console.error(error);
 
-                                    <p>
-                                        ${q.question}
-                                    </p>
+        alert(
+            "Impossible de contacter le serveur."
+        );
 
-                                    <details>
-
-                                        <summary>
-                                            Voir la réponse
-                                        </summary>
-
-                                        <p>
-                                            ${q.answer}
-                                        </p>
-
-                                    </details>
-
-                                </div>
-
-                            `
-                        )
-                        .join("")
-                    : ""
-            }
-
-        </div>
-
-    `;
+    }
 
 }
 
@@ -1701,7 +1523,10 @@ async function deleteHistory(index) {
     const item =
         history[index];
 
-    if (!item) {
+    if (
+        !item ||
+        !item._id
+    ) {
 
         alert(
             "Fiche introuvable."
@@ -1710,25 +1535,14 @@ async function deleteHistory(index) {
         return;
     }
 
-    if (
-        !confirm(
+    const confirmed =
+        confirm(
             "Supprimer cette fiche ?"
-        )
-    ) {
-
-        return;
-    }
-
-
-    if (!item._id) {
-
-        alert(
-            "Cette fiche n'est pas correctement synchronisée avec le compte."
         );
 
+    if (!confirmed) {
         return;
     }
-
 
     try {
 
@@ -1777,103 +1591,7 @@ async function deleteHistory(index) {
 
 
 /* ================================================= */
-/*                  RENOMMER                         */
-/* ================================================= */
-
-async function renameHistory(index) {
-
-    const item =
-        history[index];
-
-    if (!item) {
-
-        alert(
-            "Fiche introuvable."
-        );
-
-        return;
-    }
-
-    const newName =
-        prompt(
-            "Nouveau nom de la fiche :",
-            item.course
-        );
-
-    if (
-        !newName ||
-        !newName.trim()
-    ) {
-
-        return;
-    }
-
-    if (!item._id) {
-
-        alert(
-            "Cette fiche n'est pas correctement synchronisée avec le compte."
-        );
-
-        return;
-    }
-
-
-    try {
-
-        const response =
-            await fetch(
-                "/api/history/" +
-                item._id,
-                {
-                    method: "PUT",
-
-                    headers: {
-                        "Content-Type":
-                            "application/json"
-                    },
-
-                    credentials: "include",
-
-                    body: JSON.stringify({
-                        course:
-                            newName.trim()
-                    })
-                }
-            );
-
-        const data =
-            await response.json();
-
-        if (!response.ok) {
-
-            alert(
-                data.error ||
-                "Impossible de renommer la fiche."
-            );
-
-            return;
-        }
-
-        item.course =
-            newName.trim();
-
-        renderHistory();
-
-    } catch (error) {
-
-        console.error(error);
-
-        alert(
-            "Impossible de contacter le serveur."
-        );
-
-    }
-
-}
-
-
-/* ================================================= */
-/*                  PARTAGER                         */
+/*                    PARTAGE                        */
 /* ================================================= */
 
 async function shareHistory(index) {
@@ -1881,7 +1599,10 @@ async function shareHistory(index) {
     const item =
         history[index];
 
-    if (!item) {
+    if (
+        !item ||
+        !item._id
+    ) {
 
         alert(
             "Fiche introuvable."
@@ -1905,9 +1626,10 @@ async function shareHistory(index) {
 
                     credentials: "include",
 
-                    body: JSON.stringify(
-                        item
-                    )
+                    body: JSON.stringify({
+                        historyId:
+                            item._id
+                    })
                 }
             );
 
@@ -1943,28 +1665,31 @@ async function shareHistory(index) {
 
 
 /* ================================================= */
-/*                  IMPORTER                         */
+/*                    IMPORT                         */
 /* ================================================= */
 
 async function importSheet() {
 
+    const input =
+        document.getElementById(
+            "shareCode"
+        );
+
     const code =
-        document
-            .getElementById(
-                "shareCode"
-            )
-            .value
-            .trim();
+        input
+            ? input.value
+                .trim()
+                .toUpperCase()
+            : "";
 
     if (!code) {
 
         alert(
-            "Entre un code"
+            "Entre un code."
         );
 
         return;
     }
-
 
     try {
 
@@ -1973,27 +1698,22 @@ async function importSheet() {
                 "/share/" +
                 encodeURIComponent(code),
                 {
-                    credentials:
-                        "include"
+                    credentials: "include"
                 }
             );
-
-        if (!response.ok) {
-
-            alert(
-                "Code invalide"
-            );
-
-            return;
-        }
 
         const sheet =
             await response.json();
 
+        if (!response.ok) {
 
-        /* ========================= */
-        /* Sauvegarde dans le compte  */
-        /* ========================= */
+            alert(
+                sheet.error ||
+                "Code invalide."
+            );
+
+            return;
+        }
 
         const historyResponse =
             await fetch(
@@ -2009,13 +1729,11 @@ async function importSheet() {
                     credentials: "include",
 
                     body: JSON.stringify({
-
                         course:
                             sheet.course,
 
                         result:
                             sheet.result
-
                     })
                 }
             );
@@ -2033,13 +1751,9 @@ async function importSheet() {
             return;
         }
 
-        if (historyData.history) {
-
-            history.push(
-                historyData.history
-            );
-
-        }
+        history.unshift(
+            historyData.history
+        );
 
         renderHistory();
 
@@ -2061,79 +1775,96 @@ async function importSheet() {
 
 
 /* ================================================= */
-/*                    SÉRIE                         */
+/*                    SÉRIE                          */
 /* ================================================= */
 
 async function updateStreak() {
 
     const today =
-        new Date()
-            .toDateString();
+        new Date();
+
+    const todayKey =
+        today.toISOString()
+            .slice(0, 10);
 
     const yesterday =
         new Date(
-            Date.now() -
-            86400000
-        )
-            .toDateString();
-
-
-    const lastRevision =
-        localStorage.getItem(
-            "lastRevision"
+            today.getTime()
+            - 86400000
         );
 
+    const yesterdayKey =
+        yesterday.toISOString()
+            .slice(0, 10);
 
-    if (
-        lastRevision === today
-    ) {
+    /*
+        On garde uniquement la dernière
+        date côté serveur.
+    */
 
-        return;
+    try {
+
+        const meResponse =
+            await fetch(
+                "/me",
+                {
+                    credentials: "include"
+                }
+            );
+
+        if (!meResponse.ok) {
+            return;
+        }
+
+        /*
+            On récupère la dernière date
+            via un champ retourné par /me
+            si disponible.
+        */
+
+        const me =
+            await meResponse.json();
+
+        const lastRevision =
+            me.user?.lastRevisionDate || null;
+
+        if (lastRevision === todayKey) {
+            return;
+        }
+
+        if (lastRevision === yesterdayKey) {
+
+            streak++;
+
+        } else {
+
+            streak = 1;
+
+        }
+
+        if (streak > bestStreak) {
+            bestStreak = streak;
+        }
+
+        await saveStats();
+
+    } catch (error) {
+
+        console.error(
+            "Erreur série :",
+            error
+        );
+
     }
-
-
-    if (
-        lastRevision === yesterday
-    ) {
-
-        streak++;
-
-    } else {
-
-        streak = 1;
-
-    }
-
-
-    if (
-        streak > bestStreak
-    ) {
-
-        bestStreak =
-            streak;
-
-    }
-
-
-    localStorage.setItem(
-        "lastRevision",
-        today
-    );
-
-
-    await saveStats();
 
 }
 
 
 /* ================================================= */
-/*                CHRONOMÈTRE                        */
+/*                 CHRONOMÈTRE                       */
 /* ================================================= */
 
-function startRevision(
-    index,
-    button
-) {
+function startRevision(index, button) {
 
     const select =
         document.getElementById(
@@ -2145,16 +1876,12 @@ function startRevision(
     }
 
     const minutes =
-        Number(
-            select.value
-        );
+        Number(select.value);
 
     let timeLeft =
         minutes * 60;
 
-    button.disabled =
-        true;
-
+    button.disabled = true;
 
     const interval =
         setInterval(
@@ -2179,20 +1906,11 @@ function startRevision(
                 button.textContent =
                     `${mins}:${secs}`;
 
-
-                if (
-                    timeLeft <= 0
-                ) {
+                if (timeLeft <= 0) {
 
                     clearInterval(
                         interval
                     );
-
-                    button.disabled =
-                        false;
-
-                    button.textContent =
-                        "Réviser";
 
                     revise(
                         index,
@@ -2209,21 +1927,38 @@ function startRevision(
 
 
 /* ================================================= */
-/*              RECHERCHE HISTORIQUE                 */
+/*                  SÉCURITÉ HTML                    */
 /* ================================================= */
 
-document
-    .getElementById(
-        "historySearch"
-    )
-    ?.addEventListener(
-        "input",
-        renderHistory
-    );
+function escapeHTML(value) {
+
+    return String(value ?? "")
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+        .replace(
+            /</g,
+            "&lt;"
+        )
+        .replace(
+            />/g,
+            "&gt;"
+        )
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+        .replace(
+            /'/g,
+            "&#039;"
+        );
+
+}
 
 
 /* ================================================= */
-/*              CHARGEMENT SESSION                   */
+/*                INITIALISATION                    */
 /* ================================================= */
 
 window.addEventListener(
@@ -2236,17 +1971,14 @@ window.addEventListener(
                 await fetch(
                     "/me",
                     {
-                        credentials:
-                            "include"
+                        credentials: "include"
                     }
                 );
 
             const data =
                 await response.json();
 
-            if (
-                data.loggedIn
-            ) {
+            if (data.loggedIn) {
 
                 document
                     .getElementById(
@@ -2262,9 +1994,7 @@ window.addEventListener(
                     .style.display =
                         "block";
 
-
                 await loadControls();
-
                 await loadAccountData();
 
             } else {
