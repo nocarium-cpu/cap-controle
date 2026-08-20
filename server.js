@@ -1460,14 +1460,17 @@ async function startServer() {
             "MongoDB connecté"
         );
 
+        const PORT = process.env.PORT || 3001;
+        
         app.listen(
-            3001,
+            PORT,
+            "0.0.0.0",
             () => {
-
+        
                 console.log(
-                    "Serveur lancé sur http://localhost:3001"
+                    `Serveur lancé sur le port ${PORT}`
                 );
-
+        
             }
         );
 
