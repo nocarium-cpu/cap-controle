@@ -179,9 +179,11 @@ async function login() {
 
         document.getElementById("loginScreen")
             .style.display = "none";
-
+        
         document.getElementById("app")
             .style.display = "block";
+        
+        await loadControls();
 
     } catch (error) {
 
