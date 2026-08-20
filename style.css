@@ -835,3 +835,160 @@ select{
     }
 
 }
+
+/* ========================= */
+/* PARAMÈTRES */
+/* ========================= */
+
+#settingsPage{
+    min-height:100vh;
+}
+
+.settings-container{
+    max-width:700px;
+    margin:auto;
+    padding:25px 20px 40px;
+}
+
+.settings-container h1{
+    margin-top:20px;
+    margin-bottom:25px;
+}
+
+.back-settings-btn{
+    width:auto !important;
+
+    padding:9px 15px;
+
+    background:#fffaf3;
+    color:#4a3f35;
+
+    border:1px solid #eadfce;
+    border-radius:12px;
+
+    font-family:"Cormorant Garamond", serif;
+    font-size:15px;
+}
+
+.back-settings-btn:hover{
+    background:#f7f2e9;
+}
+
+.settings-card{
+    background:#fffaf3;
+
+    border:1px solid #eadfce;
+    border-radius:18px;
+
+    padding:20px;
+
+    margin-bottom:15px;
+
+    box-shadow:0 8px 25px rgba(0,0,0,.05);
+}
+
+.settings-card h2{
+    color:#4a3f35;
+
+    font-size:20px;
+    font-weight:500;
+
+    margin-bottom:15px;
+}
+
+.settings-item{
+    display:flex;
+
+    align-items:center;
+    justify-content:space-between;
+
+    gap:20px;
+
+    padding:15px 0;
+
+    border-top:1px solid #eadfce;
+}
+
+.settings-item:first-of-type{
+    border-top:none;
+}
+
+.settings-item strong{
+    display:block;
+
+    color:#4a3f35;
+
+    font-size:16px;
+}
+
+.settings-item p{
+    margin-top:4px;
+
+    color:#8a7d70;
+
+    font-size:13px;
+}
+
+.settings-item button{
+    width:auto;
+
+    min-width:90px;
+
+    padding:9px 14px;
+}
+
+/* Sélecteur */
+
+.settings-item select{
+    height:38px;
+
+    padding:0 12px;
+
+    border-radius:10px;
+
+    border:1px solid #d8cab5;
+
+    background:#fff;
+
+    color:#3d352e;
+
+    font-family:"Cormorant Garamond", serif;
+    font-size:15px;
+}
+
+/* Zone dangereuse */
+
+.danger-card{
+    border-color:#e3bcbc;
+}
+
+.danger-card h2{
+    color:#b33a3a;
+}
+
+.delete-account-btn{
+    background:#d86a6a !important;
+}
+
+.delete-account-btn:hover{
+    background:#c85c5c !important;
+}
+
+/* Mobile */
+
+@media(max-width:700px){
+
+    .settings-container{
+        padding:20px 15px 30px;
+    }
+
+    .settings-item{
+        align-items:flex-start;
+    }
+
+    .settings-item button,
+    .settings-item select{
+        flex-shrink:0;
+    }
+
+}
