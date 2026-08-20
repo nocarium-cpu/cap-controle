@@ -1,4 +1,4 @@
-import { MongoClient } from "mongodb";
+import { MongoClient, ObjectId } from "mongodb";
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
@@ -9,9 +9,9 @@ import { fileURLToPath } from "url";
 
 dotenv.config();
 
-/* ========================= */
-/* MongoDB */
-/* ========================= */
+/* ================================================= */
+/*                    MONGODB                        */
+/* ================================================= */
 
 const client = new MongoClient(
     process.env.MONGODB_URI
@@ -19,29 +19,28 @@ const client = new MongoClient(
 
 let db;
 
-/* ========================= */
-/* Express */
-/* ========================= */
+
+/* ================================================= */
+/*                    EXPRESS                        */
+/* ================================================= */
 
 const app = express();
 
-app.use(express.json());
+app.use(
+    express.json()
+);
 
-/*
-    Ton frontend est servi directement
-    par Express sur Render.
+app.use(
+    cors({
+        origin: true,
+        credentials: true
+    })
+);
 
-    On évite donc le cors "*" avec
-    les cookies de session.
-*/
-app.use(cors({
-    origin: true,
-    credentials: true
-}));
 
-/* ========================= */
-/* Fichiers du site */
-/* ========================= */
+/* ================================================= */
+/*                 FICHIERS DU SITE                  */
+/* ================================================= */
 
 const __filename =
     fileURLToPath(import.meta.url);
@@ -53,115 +52,139 @@ app.use(
     express.static(__dirname)
 );
 
-/* ========================= */
-/* OpenAI */
-/* ========================= */
+
+/* ================================================= */
+/*                     OPENAI                        */
+/* ================================================= */
 
 const openai = new OpenAI({
     apiKey: process.env.OPENAI_API_KEY
 });
 
+
 /* ================================================= */
-/*                 UTILITAIRES COMPTES               */
+/*                 UTILITAIRES                       */
 /* ================================================= */
 
-/*
-    Hash sécurisé du mot de passe
-    avec l'algorithme scrypt intégré à Node.js.
-*/
+
+/* ========================= */
+/* Hash mot de passe         */
+/* ========================= */
 
 function hashPassword(password) {
 
-    return new Promise((resolve, reject) => {
+    return new Promise(
+        (resolve, reject) => {
 
-        const salt =
-            crypto.randomBytes(16);
+            const salt =
+                crypto.randomBytes(16);
 
-        crypto.scrypt(
-            password,
-            salt,
-            64,
-            (error, derivedKey) => {
+            crypto.scrypt(
+                password,
+                salt,
+                64,
+                (
+                    error,
+                    derivedKey
+                ) => {
 
-                if (error) {
-                    reject(error);
-                    return;
+                    if (error) {
+                        reject(error);
+                        return;
+                    }
+
+                    resolve(
+                        salt.toString("hex")
+                        + ":"
+                        + derivedKey.toString("hex")
+                    );
+
                 }
+            );
 
-                resolve(
-                    salt.toString("hex")
-                    + ":"
-                    + derivedKey.toString("hex")
-                );
-
-            }
-        );
-
-    });
+        }
+    );
 
 }
 
 
-/*
-    Vérification du mot de passe.
-*/
+/* ========================= */
+/* Vérifier mot de passe     */
+/* ========================= */
 
 function verifyPassword(
     password,
     storedHash
 ) {
 
-    return new Promise((resolve, reject) => {
+    return new Promise(
+        (resolve, reject) => {
 
-        const parts =
-            storedHash.split(":");
+            const parts =
+                storedHash.split(":");
 
-        if (parts.length !== 2) {
-            resolve(false);
-            return;
-        }
+            if (parts.length !== 2) {
 
-        const salt =
-            Buffer.from(
-                parts[0],
-                "hex"
-            );
-
-        const originalHash =
-            Buffer.from(
-                parts[1],
-                "hex"
-            );
-
-        crypto.scrypt(
-            password,
-            salt,
-            64,
-            (error, derivedKey) => {
-
-                if (error) {
-                    reject(error);
-                    return;
-                }
-
-                resolve(
-                    crypto.timingSafeEqual(
-                        originalHash,
-                        derivedKey
-                    )
-                );
+                resolve(false);
+                return;
 
             }
-        );
 
-    });
+            const salt =
+                Buffer.from(
+                    parts[0],
+                    "hex"
+                );
+
+            const originalHash =
+                Buffer.from(
+                    parts[1],
+                    "hex"
+                );
+
+            crypto.scrypt(
+                password,
+                salt,
+                64,
+                (
+                    error,
+                    derivedKey
+                ) => {
+
+                    if (error) {
+                        reject(error);
+                        return;
+                    }
+
+                    if (
+                        originalHash.length !==
+                        derivedKey.length
+                    ) {
+
+                        resolve(false);
+                        return;
+
+                    }
+
+                    resolve(
+                        crypto.timingSafeEqual(
+                            originalHash,
+                            derivedKey
+                        )
+                    );
+
+                }
+            );
+
+        }
+    );
 
 }
 
 
-/*
-    Création d'un token de session.
-*/
+/* ========================= */
+/* Token session             */
+/* ========================= */
 
 function createSessionToken() {
 
@@ -172,10 +195,9 @@ function createSessionToken() {
 }
 
 
-/*
-    Hash du token avant de le mettre
-    dans MongoDB.
-*/
+/* ========================= */
+/* Hash token session        */
+/* ========================= */
 
 function hashSessionToken(token) {
 
@@ -187,9 +209,9 @@ function hashSessionToken(token) {
 }
 
 
-/*
-    Récupérer le cookie de session.
-*/
+/* ========================= */
+/* Lire cookie session       */
+/* ========================= */
 
 function getSessionToken(req) {
 
@@ -203,7 +225,10 @@ function getSessionToken(req) {
     const cookies =
         cookieHeader
             .split(";")
-            .map(cookie => cookie.trim());
+            .map(
+                cookie =>
+                    cookie.trim()
+            );
 
     const sessionCookie =
         cookies.find(
@@ -226,9 +251,9 @@ function getSessionToken(req) {
 }
 
 
-/*
-    Créer le cookie de session.
-*/
+/* ========================= */
+/* Créer cookie session      */
+/* ========================= */
 
 function setSessionCookie(
     res,
@@ -236,16 +261,22 @@ function setSessionCookie(
 ) {
 
     const isProduction =
-        process.env.NODE_ENV === "production";
+        process.env.NODE_ENV ===
+        "production";
 
-    const cookie =
-        [
-            `capcontrole_session=${encodeURIComponent(token)}`,
-            "HttpOnly",
-            "Path=/",
-            "SameSite=Lax",
-            "Max-Age=2592000"
-        ];
+    const cookie = [
+
+        `capcontrole_session=${encodeURIComponent(token)}`,
+
+        "HttpOnly",
+
+        "Path=/",
+
+        "SameSite=Lax",
+
+        "Max-Age=2592000"
+
+    ];
 
     if (isProduction) {
         cookie.push("Secure");
@@ -259,9 +290,9 @@ function setSessionCookie(
 }
 
 
-/*
-    Supprimer le cookie.
-*/
+/* ========================= */
+/* Supprimer cookie          */
+/* ========================= */
 
 function clearSessionCookie(res) {
 
@@ -269,6 +300,60 @@ function clearSessionCookie(res) {
         "Set-Cookie",
         "capcontrole_session=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0"
     );
+
+}
+
+
+/* ================================================= */
+/*              UTILISATEUR CONNECTÉ                */
+/* ================================================= */
+
+async function getCurrentUser(req) {
+
+    const token =
+        getSessionToken(req);
+
+    if (!token) {
+        return null;
+    }
+
+    const tokenHash =
+        hashSessionToken(token);
+
+    const session =
+        await db
+            .collection("sessions")
+            .findOne({
+                tokenHash
+            });
+
+    if (!session) {
+        return null;
+    }
+
+    if (
+        session.expiresAt < new Date()
+    ) {
+
+        await db
+            .collection("sessions")
+            .deleteOne({
+                _id:
+                    session._id
+            });
+
+        return null;
+    }
+
+    const user =
+        await db
+            .collection("users")
+            .findOne({
+                _id:
+                    session.userId
+            });
+
+    return user || null;
 
 }
 
@@ -288,8 +373,6 @@ app.post(
                 email,
                 password
             } = req.body;
-
-            /* Vérifications */
 
             if (
                 !username ||
@@ -365,11 +448,13 @@ app.post(
             const users =
                 db.collection("users");
 
-            /* Vérifier si l'e-mail existe */
+
+            /* Vérifier email */
 
             const existingEmail =
                 await users.findOne({
-                    email: cleanEmail
+                    email:
+                        cleanEmail
                 });
 
             if (existingEmail) {
@@ -382,7 +467,8 @@ app.post(
 
             }
 
-            /* Vérifier si le pseudo existe */
+
+            /* Vérifier pseudo */
 
             const existingUsername =
                 await users.findOne({
@@ -400,14 +486,16 @@ app.post(
 
             }
 
-            /* Hash du mot de passe */
+
+            /* Hash */
 
             const passwordHash =
                 await hashPassword(
                     password
                 );
 
-            /* Créer l'utilisateur */
+
+            /* Créer utilisateur */
 
             const user = {
 
@@ -422,21 +510,32 @@ app.post(
 
                 passwordHash,
 
+                streak:
+                    0,
+
+                bestStreak:
+                    0,
+
                 createdAt:
                     new Date()
 
             };
 
             const result =
-                await users.insertOne(user);
+                await users.insertOne(
+                    user
+                );
 
-            /* Créer automatiquement une session */
+
+            /* Session automatique */
 
             const token =
                 createSessionToken();
 
             const tokenHash =
-                hashSessionToken(token);
+                hashSessionToken(
+                    token
+                );
 
             await db
                 .collection("sessions")
@@ -453,19 +552,27 @@ app.post(
                     expiresAt:
                         new Date(
                             Date.now()
-                            + 30 * 24 * 60 * 60 * 1000
+                            +
+                            30 *
+                            24 *
+                            60 *
+                            60 *
+                            1000
                         )
 
                 });
+
 
             setSessionCookie(
                 res,
                 token
             );
 
+
             res.json({
 
-                success: true,
+                success:
+                    true,
 
                 user: {
 
@@ -491,7 +598,8 @@ app.post(
 
             res.status(500).json({
 
-                success: false,
+                success:
+                    false,
 
                 error:
                     "Erreur serveur."
@@ -571,13 +679,16 @@ app.post(
 
             }
 
+
             /* Nouvelle session */
 
             const token =
                 createSessionToken();
 
             const tokenHash =
-                hashSessionToken(token);
+                hashSessionToken(
+                    token
+                );
 
             await db
                 .collection("sessions")
@@ -594,19 +705,27 @@ app.post(
                     expiresAt:
                         new Date(
                             Date.now()
-                            + 30 * 24 * 60 * 60 * 1000
+                            +
+                            30 *
+                            24 *
+                            60 *
+                            60 *
+                            1000
                         )
 
                 });
+
 
             setSessionCookie(
                 res,
                 token
             );
 
+
             res.json({
 
-                success: true,
+                success:
+                    true,
 
                 user: {
 
@@ -632,7 +751,8 @@ app.post(
 
             res.status(500).json({
 
-                success: false,
+                success:
+                    false,
 
                 error:
                     "Erreur serveur."
@@ -655,78 +775,22 @@ app.get(
 
         try {
 
-            const token =
-                getSessionToken(req);
-
-            if (!token) {
-
-                return res.json({
-                    loggedIn: false
-                });
-
-            }
-
-            const tokenHash =
-                hashSessionToken(token);
-
-            const session =
-                await db
-                    .collection("sessions")
-                    .findOne({
-                        tokenHash
-                    });
-
-            if (!session) {
-
-                return res.json({
-                    loggedIn: false
-                });
-
-            }
-
-            /* Session expirée */
-
-            if (
-                session.expiresAt <
-                new Date()
-            ) {
-
-                await db
-                    .collection("sessions")
-                    .deleteOne({
-                        _id:
-                            session._id
-                    });
-
-                clearSessionCookie(res);
-
-                return res.json({
-                    loggedIn: false
-                });
-
-            }
-
             const user =
-                await db
-                    .collection("users")
-                    .findOne({
-                        _id:
-                            session.userId
-                    });
+                await getCurrentUser(req);
 
             if (!user) {
 
-                clearSessionCookie(res);
-
                 return res.json({
-                    loggedIn: false
+                    loggedIn:
+                        false
                 });
 
             }
 
             res.json({
 
-                loggedIn: true,
+                loggedIn:
+                    true,
 
                 user: {
 
@@ -777,7 +841,9 @@ app.post(
             if (token) {
 
                 const tokenHash =
-                    hashSessionToken(token);
+                    hashSessionToken(
+                        token
+                    );
 
                 await db
                     .collection("sessions")
@@ -790,7 +856,8 @@ app.post(
             clearSessionCookie(res);
 
             res.json({
-                success: true
+                success:
+                    true
             });
 
         } catch (error) {
@@ -810,68 +877,14 @@ app.post(
     }
 );
 
-/* ================================================= */
-/*                 AUTHENTIFICATION                  */
-/* ================================================= */
-
-/*
-    Récupère l'utilisateur connecté
-    à partir de sa session.
-*/
-
-async function getCurrentUser(req) {
-
-    const token =
-        getSessionToken(req);
-
-    if (!token) {
-        return null;
-    }
-
-    const tokenHash =
-        hashSessionToken(token);
-
-    const session =
-        await db
-            .collection("sessions")
-            .findOne({
-                tokenHash
-            });
-
-    if (!session) {
-        return null;
-    }
-
-    if (
-        session.expiresAt < new Date()
-    ) {
-
-        await db
-            .collection("sessions")
-            .deleteOne({
-                _id: session._id
-            });
-
-        return null;
-    }
-
-    const user =
-        await db
-            .collection("users")
-            .findOne({
-                _id: session.userId
-            });
-
-    return user || null;
-}
 
 /* ================================================= */
-/*          SYNCHRONISATION DU COMPTE                */
+/*                 SÉRIE + RECORD                    */
 /* ================================================= */
 
 
 /* ========================= */
-/* Récupérer série + record  */
+/* Récupérer statistiques    */
 /* ========================= */
 
 app.get(
@@ -921,7 +934,7 @@ app.get(
 
 
 /* ========================= */
-/* Sauvegarder série + record */
+/* Sauvegarder statistiques  */
 /* ========================= */
 
 app.put(
@@ -943,10 +956,14 @@ app.put(
             }
 
             const streak =
-                Number(req.body.streak);
+                Number(
+                    req.body.streak
+                );
 
             const bestStreak =
-                Number(req.body.bestStreak);
+                Number(
+                    req.body.bestStreak
+                );
 
             if (
                 !Number.isFinite(streak) ||
@@ -964,18 +981,23 @@ app.put(
                 .collection("users")
                 .updateOne(
                     {
-                        _id: user._id
+                        _id:
+                            user._id
                     },
                     {
                         $set: {
+
                             streak,
+
                             bestStreak
+
                         }
                     }
                 );
 
             res.json({
-                success: true
+                success:
+                    true
             });
 
         } catch (error) {
@@ -1002,7 +1024,7 @@ app.put(
 
 
 /* ========================= */
-/* Récupérer l'historique    */
+/* Récupérer historique      */
 /* ========================= */
 
 app.get(
@@ -1031,11 +1053,14 @@ app.get(
                             user._id
                     })
                     .sort({
-                        createdAt: -1
+                        createdAt:
+                            -1
                     })
                     .toArray();
 
-            res.json(history);
+            res.json(
+                history
+            );
 
         } catch (error) {
 
@@ -1056,7 +1081,7 @@ app.get(
 
 
 /* ========================= */
-/* Ajouter à l'historique    */
+/* Ajouter fiche             */
 /* ========================= */
 
 app.post(
@@ -1105,11 +1130,6 @@ app.post(
 
                 result,
 
-                date:
-                    new Date().toLocaleString(
-                        "fr-FR"
-                    ),
-
                 createdAt:
                     new Date()
 
@@ -1124,7 +1144,8 @@ app.post(
 
             res.json({
 
-                success: true,
+                success:
+                    true,
 
                 history: {
 
@@ -1156,7 +1177,113 @@ app.post(
 
 
 /* ========================= */
-/* Supprimer une fiche       */
+/* Renommer fiche            */
+/* ========================= */
+
+app.put(
+    "/api/history/:id",
+    async (req, res) => {
+
+        try {
+
+            const user =
+                await getCurrentUser(req);
+
+            if (!user) {
+
+                return res.status(401).json({
+                    error:
+                        "Utilisateur non connecté."
+                });
+
+            }
+
+            if (
+                !ObjectId.isValid(
+                    req.params.id
+                )
+            ) {
+
+                return res.status(400).json({
+                    error:
+                        "Identifiant invalide."
+                });
+
+            }
+
+            const {
+                course
+            } = req.body;
+
+            if (
+                typeof course !== "string" ||
+                !course.trim()
+            ) {
+
+                return res.status(400).json({
+                    error:
+                        "Nom de fiche invalide."
+                });
+
+            }
+
+            const result =
+                await db
+                    .collection("history")
+                    .updateOne(
+                        {
+                            _id:
+                                new ObjectId(
+                                    req.params.id
+                                ),
+
+                            userId:
+                                user._id
+                        },
+                        {
+                            $set: {
+                                course:
+                                    course.trim()
+                            }
+                        }
+                    );
+
+            if (
+                result.matchedCount === 0
+            ) {
+
+                return res.status(404).json({
+                    error:
+                        "Fiche introuvable."
+                });
+
+            }
+
+            res.json({
+                success:
+                    true
+            });
+
+        } catch (error) {
+
+            console.error(
+                "Erreur renommage historique :",
+                error
+            );
+
+            res.status(500).json({
+                error:
+                    "Erreur serveur."
+            });
+
+        }
+
+    }
+);
+
+
+/* ========================= */
+/* Supprimer fiche           */
 /* ========================= */
 
 app.delete(
@@ -1176,9 +1303,6 @@ app.delete(
                 });
 
             }
-
-            const { ObjectId } =
-                await import("mongodb");
 
             if (
                 !ObjectId.isValid(
@@ -1220,7 +1344,8 @@ app.delete(
             }
 
             res.json({
-                success: true
+                success:
+                    true
             });
 
         } catch (error) {
@@ -1240,374 +1365,15 @@ app.delete(
     }
 );
 
-/* ================================================= */
-/*             DONNÉES DU COMPTE                     */
-/* ================================================= */
-
-/* ========================= */
-/* Récupérer les statistiques */
-/* ========================= */
-
-app.get(
-    "/api/stats",
-    async (req, res) => {
-
-        try {
-
-            const user =
-                await getCurrentUser(req);
-
-            if (!user) {
-
-                return res.status(401).json({
-                    error:
-                        "Utilisateur non connecté."
-                });
-
-            }
-
-            res.json({
-
-                streak:
-                    user.streak || 0,
-
-                bestStreak:
-                    user.bestStreak || 0
-
-            });
-
-        } catch (error) {
-
-            console.error(
-                "Erreur récupération statistiques :",
-                error
-            );
-
-            res.status(500).json({
-                error:
-                    "Erreur serveur."
-            });
-
-        }
-
-    }
-);
-
-
-/* ========================= */
-/* Sauvegarder les statistiques */
-/* ========================= */
-
-app.put(
-    "/api/stats",
-    async (req, res) => {
-
-        try {
-
-            const user =
-                await getCurrentUser(req);
-
-            if (!user) {
-
-                return res.status(401).json({
-                    error:
-                        "Utilisateur non connecté."
-                });
-
-            }
-
-            const {
-                streak,
-                bestStreak
-            } = req.body;
-
-            const update = {};
-
-            if (
-                typeof streak === "number"
-            ) {
-
-                update.streak =
-                    streak;
-
-            }
-
-            if (
-                typeof bestStreak === "number"
-            ) {
-
-                update.bestStreak =
-                    bestStreak;
-
-            }
-
-            await db
-                .collection("users")
-                .updateOne(
-                    {
-                        _id: user._id
-                    },
-                    {
-                        $set: update
-                    }
-                );
-
-            res.json({
-                success: true
-            });
-
-        } catch (error) {
-
-            console.error(
-                "Erreur sauvegarde statistiques :",
-                error
-            );
-
-            res.status(500).json({
-                error:
-                    "Erreur serveur."
-            });
-
-        }
-
-    }
-);
-
-
-/* ================================================= */
-/*                 HISTORIQUE IA                     */
-/* ================================================= */
-
-
-/* ========================= */
-/* Récupérer l'historique    */
-/* ========================= */
-
-app.get(
-    "/api/history",
-    async (req, res) => {
-
-        try {
-
-            const user =
-                await getCurrentUser(req);
-
-            if (!user) {
-
-                return res.status(401).json({
-                    error:
-                        "Utilisateur non connecté."
-                });
-
-            }
-
-            const history =
-                await db
-                    .collection("history")
-                    .find({
-                        userId:
-                            user._id
-                    })
-                    .sort({
-                        createdAt: -1
-                    })
-                    .toArray();
-
-            res.json(history);
-
-        } catch (error) {
-
-            console.error(
-                "Erreur récupération historique :",
-                error
-            );
-
-            res.status(500).json({
-                error:
-                    "Erreur serveur."
-            });
-
-        }
-
-    }
-);
-
-
-/* ========================= */
-/* Ajouter une fiche         */
-/* ========================= */
-
-app.post(
-    "/api/history",
-    async (req, res) => {
-
-        try {
-
-            const user =
-                await getCurrentUser(req);
-
-            if (!user) {
-
-                return res.status(401).json({
-                    error:
-                        "Utilisateur non connecté."
-                });
-
-            }
-
-            const {
-                course,
-                result
-            } = req.body;
-
-            if (
-                !course ||
-                !result
-            ) {
-
-                return res.status(400).json({
-                    error:
-                        "Données manquantes."
-                });
-
-            }
-
-            const historyItem = {
-
-                userId:
-                    user._id,
-
-                date:
-                    new Date().toLocaleString(
-                        "fr-FR"
-                    ),
-
-                course,
-
-                result,
-
-                createdAt:
-                    new Date()
-
-            };
-
-            const inserted =
-                await db
-                    .collection("history")
-                    .insertOne(
-                        historyItem
-                    );
-
-            res.json({
-
-                success: true,
-
-                history: {
-                    _id:
-                        inserted.insertedId,
-
-                    ...historyItem
-                }
-
-            });
-
-        } catch (error) {
-
-            console.error(
-                "Erreur ajout historique :",
-                error
-            );
-
-            res.status(500).json({
-                error:
-                    "Erreur serveur."
-            });
-
-        }
-
-    }
-);
-
-
-/* ========================= */
-/* Supprimer une fiche       */
-/* ========================= */
-
-app.delete(
-    "/api/history/:id",
-    async (req, res) => {
-
-        try {
-
-            const user =
-                await getCurrentUser(req);
-
-            if (!user) {
-
-                return res.status(401).json({
-                    error:
-                        "Utilisateur non connecté."
-                });
-
-            }
-
-            const { ObjectId } =
-                await import("mongodb");
-
-            const result =
-                await db
-                    .collection("history")
-                    .deleteOne({
-                        _id:
-                            new ObjectId(
-                                req.params.id
-                            ),
-
-                        userId:
-                            user._id
-                    });
-
-            if (
-                result.deletedCount === 0
-            ) {
-
-                return res.status(404).json({
-                    error:
-                        "Fiche introuvable."
-                });
-
-            }
-
-            res.json({
-                success: true
-            });
-
-        } catch (error) {
-
-            console.error(
-                "Erreur suppression historique :",
-                error
-            );
-
-            res.status(500).json({
-                error:
-                    "Erreur serveur."
-            });
-
-        }
-
-    }
-);
 
 /* ================================================= */
 /*                    CONTRÔLES                      */
 /* ================================================= */
 
 
-/*
-    Récupérer les contrôles
-    de l'utilisateur connecté.
-*/
+/* ========================= */
+/* Récupérer contrôles       */
+/* ========================= */
 
 app.get(
     "/api/controls",
@@ -1631,14 +1397,18 @@ app.get(
                 await db
                     .collection("controls")
                     .find({
-                        userId: user._id
+                        userId:
+                            user._id
                     })
                     .sort({
-                        date: 1
+                        date:
+                            1
                     })
                     .toArray();
 
-            res.json(controls);
+            res.json(
+                controls
+            );
 
         } catch (error) {
 
@@ -1658,9 +1428,9 @@ app.get(
 );
 
 
-/*
-    Ajouter un contrôle.
-*/
+/* ========================= */
+/* Ajouter contrôle          */
+/* ========================= */
 
 app.post(
     "/api/controls",
@@ -1726,13 +1496,17 @@ app.post(
             const result =
                 await db
                     .collection("controls")
-                    .insertOne(control);
+                    .insertOne(
+                        control
+                    );
 
             res.json({
 
-                success: true,
+                success:
+                    true,
 
                 control: {
+
                     _id:
                         result.insertedId,
 
@@ -1760,10 +1534,9 @@ app.post(
 );
 
 
-/*
-    Modifier la progression
-    d'un contrôle.
-*/
+/* ========================= */
+/* Modifier progression      */
+/* ========================= */
 
 app.put(
     "/api/controls/:id",
@@ -1783,12 +1556,28 @@ app.put(
 
             }
 
-            const {
-                progress
-            } = req.body;
+            if (
+                !ObjectId.isValid(
+                    req.params.id
+                )
+            ) {
+
+                return res.status(400).json({
+                    error:
+                        "Identifiant invalide."
+                });
+
+            }
+
+            const progress =
+                Number(
+                    req.body.progress
+                );
 
             if (
-                typeof progress !== "number"
+                !Number.isFinite(
+                    progress
+                )
             ) {
 
                 return res.status(400).json({
@@ -1798,28 +1587,22 @@ app.put(
 
             }
 
-            const { ObjectId } =
-                await import("mongodb");
-
-            const id =
-                new ObjectId(
-                    req.params.id
-                );
-
             const result =
                 await db
                     .collection("controls")
                     .updateOne(
-
                         {
-                            _id: id,
+                            _id:
+                                new ObjectId(
+                                    req.params.id
+                                ),
 
                             userId:
                                 user._id
                         },
-
                         {
                             $set: {
+
                                 progress:
                                     Math.min(
                                         100,
@@ -1828,9 +1611,9 @@ app.put(
                                             progress
                                         )
                                     )
+
                             }
                         }
-
                     );
 
             if (
@@ -1845,7 +1628,8 @@ app.put(
             }
 
             res.json({
-                success: true
+                success:
+                    true
             });
 
         } catch (error) {
@@ -1866,9 +1650,9 @@ app.put(
 );
 
 
-/*
-    Supprimer un contrôle.
-*/
+/* ========================= */
+/* Supprimer contrôle        */
+/* ========================= */
 
 app.delete(
     "/api/controls/:id",
@@ -1888,20 +1672,28 @@ app.delete(
 
             }
 
-            const { ObjectId } =
-                await import("mongodb");
-
-            const id =
-                new ObjectId(
+            if (
+                !ObjectId.isValid(
                     req.params.id
-                );
+                )
+            ) {
+
+                return res.status(400).json({
+                    error:
+                        "Identifiant invalide."
+                });
+
+            }
 
             const result =
                 await db
                     .collection("controls")
                     .deleteOne({
 
-                        _id: id,
+                        _id:
+                            new ObjectId(
+                                req.params.id
+                            ),
 
                         userId:
                             user._id
@@ -1920,7 +1712,8 @@ app.delete(
             }
 
             res.json({
-                success: true
+                success:
+                    true
             });
 
         } catch (error) {
@@ -1939,6 +1732,7 @@ app.delete(
 
     }
 );
+
 
 /* ================================================= */
 /*                       IA                          */
@@ -1960,14 +1754,23 @@ app.post(
 
             if (
                 !course ||
+                typeof course !== "string"
+            ) {
+
+                return res.status(400).json({
+                    error:
+                        "Cours manquant."
+                });
+
+            }
+
+            if (
                 course.length > 10000
             ) {
 
                 return res.status(400).json({
-
                     error:
-                        "Cours trop long"
-
+                        "Cours trop long."
                 });
 
             }
@@ -1976,7 +1779,10 @@ app.post(
                 "COURS REÇU :"
             );
 
-            console.log(course);
+            console.log(
+                course
+            );
+
 
             const response =
                 await openai
@@ -2030,13 +1836,13 @@ Aucun texte avant ou après le JSON.
 
                     });
 
+
             const content =
                 response
                     .choices[0]
                     .message
                     .content;
 
-            console.log(content);
 
             const cleanContent =
                 content
@@ -2050,6 +1856,7 @@ Aucun texte avant ou après le JSON.
                     )
                     .trim();
 
+
             res.json(
                 JSON.parse(
                     cleanContent
@@ -2058,7 +1865,10 @@ Aucun texte avant ou après le JSON.
 
         } catch (error) {
 
-            console.error(error);
+            console.error(
+                "Erreur génération IA :",
+                error
+            );
 
             res.status(500).json({
 
@@ -2074,8 +1884,16 @@ Aucun texte avant ou après le JSON.
 
 
 /* ================================================= */
-/*                    PARTAGE                        */
+/*                     PARTAGE                       */
 /* ================================================= */
+
+
+/*
+    Créer un code de partage.
+
+    La fiche partagée est enregistrée
+    dans MongoDB.
+*/
 
 app.post(
     "/share",
@@ -2083,11 +1901,64 @@ app.post(
 
         try {
 
-            const code =
-                Math.random()
-                    .toString(36)
-                    .substring(2, 8)
-                    .toUpperCase();
+            const user =
+                await getCurrentUser(req);
+
+            if (!user) {
+
+                return res.status(401).json({
+                    error:
+                        "Utilisateur non connecté."
+                });
+
+            }
+
+            const {
+                course,
+                result
+            } = req.body;
+
+            if (
+                typeof course !== "string" ||
+                !course.trim() ||
+                !result
+            ) {
+
+                return res.status(400).json({
+                    error:
+                        "Données de partage invalides."
+                });
+
+            }
+
+
+            /* Générer un code */
+
+            let code;
+
+            let existing;
+
+            do {
+
+                code =
+                    crypto
+                        .randomBytes(4)
+                        .toString("hex")
+                        .toUpperCase();
+
+                existing =
+                    await db
+                        .collection(
+                            "sharedSheets"
+                        )
+                        .findOne({
+                            code
+                        });
+
+            } while (existing);
+
+
+            /* Enregistrer dans MongoDB */
 
             await db
                 .collection(
@@ -2097,25 +1968,40 @@ app.post(
 
                     code,
 
-                    ...req.body,
+                    ownerId:
+                        user._id,
+
+                    course:
+                        course.trim(),
+
+                    result,
 
                     createdAt:
                         new Date()
 
                 });
 
+
             res.json({
+
+                success:
+                    true,
+
                 code
+
             });
 
         } catch (error) {
 
-            console.error(error);
+            console.error(
+                "Erreur partage :",
+                error
+            );
 
             res.status(500).json({
 
                 error:
-                    "Erreur partage"
+                    "Erreur partage."
 
             });
 
@@ -2125,11 +2011,21 @@ app.post(
 );
 
 
+/*
+    Récupérer une fiche partagée
+    avec son code.
+*/
+
 app.get(
     "/share/:code",
     async (req, res) => {
 
         try {
+
+            const code =
+                req.params.code
+                    .trim()
+                    .toUpperCase();
 
             const sheet =
                 await db
@@ -2137,11 +2033,7 @@ app.get(
                         "sharedSheets"
                     )
                     .findOne({
-
-                        code:
-                            req.params.code
-                                .toUpperCase()
-
+                        code
                     });
 
             if (!sheet) {
@@ -2149,23 +2041,159 @@ app.get(
                 return res.status(404).json({
 
                     error:
-                        "Fiche introuvable"
+                        "Fiche introuvable."
 
                 });
 
             }
 
-            res.json(sheet);
+            res.json({
+
+                course:
+                    sheet.course,
+
+                result:
+                    sheet.result
+
+            });
 
         } catch (error) {
 
-            console.error(error);
+            console.error(
+                "Erreur récupération partage :",
+                error
+            );
 
             res.status(500).json({
 
                 error:
-                    "Erreur serveur"
+                    "Erreur serveur."
 
+            });
+
+        }
+
+    }
+);
+
+
+/*
+    Importer directement une fiche
+    partagée dans le compte connecté.
+
+    Cela permet de ne plus dépendre
+    du localStorage pour l'historique.
+*/
+
+app.post(
+    "/api/history/import",
+    async (req, res) => {
+
+        try {
+
+            const user =
+                await getCurrentUser(req);
+
+            if (!user) {
+
+                return res.status(401).json({
+                    error:
+                        "Utilisateur non connecté."
+                });
+
+            }
+
+            const {
+                code
+            } = req.body;
+
+            if (
+                typeof code !== "string" ||
+                !code.trim()
+            ) {
+
+                return res.status(400).json({
+                    error:
+                        "Code invalide."
+                });
+
+            }
+
+            const sheet =
+                await db
+                    .collection(
+                        "sharedSheets"
+                    )
+                    .findOne({
+                        code:
+                            code
+                                .trim()
+                                .toUpperCase()
+                    });
+
+            if (!sheet) {
+
+                return res.status(404).json({
+                    error:
+                        "Code invalide."
+                });
+
+            }
+
+
+            /* Créer la fiche dans
+               l'historique du compte */
+
+            const historyItem = {
+
+                userId:
+                    user._id,
+
+                course:
+                    sheet.course,
+
+                result:
+                    sheet.result,
+
+                createdAt:
+                    new Date()
+
+            };
+
+            const inserted =
+                await db
+                    .collection("history")
+                    .insertOne(
+                        historyItem
+                    );
+
+
+            res.json({
+
+                success:
+                    true,
+
+                history: {
+
+                    _id:
+                        inserted.insertedId,
+
+                    ...historyItem
+
+                }
+
+            });
+
+        } catch (error) {
+
+            console.error(
+                "Erreur import fiche :",
+                error
+            );
+
+            res.status(500).json({
+                error:
+                    "Erreur serveur."
             });
 
         }
@@ -2193,15 +2221,70 @@ async function startServer() {
             "MongoDB connecté"
         );
 
-        const PORT = process.env.PORT || 3001;
-        
-        app.listen(PORT, "0.0.0.0", () => {
-        
-            console.log(
-                `Serveur lancé sur le port ${PORT}`
+
+        /* Index utiles */
+
+        await db
+            .collection("users")
+            .createIndex(
+                {
+                    email: 1
+                },
+                {
+                    unique: true
+                }
             );
-        
-        });
+
+        await db
+            .collection("users")
+            .createIndex(
+                {
+                    usernameLower: 1
+                },
+                {
+                    unique: true
+                }
+            );
+
+        await db
+            .collection("sessions")
+            .createIndex(
+                {
+                    tokenHash: 1
+                },
+                {
+                    unique: true
+                }
+            );
+
+        await db
+            .collection("sharedSheets")
+            .createIndex(
+                {
+                    code: 1
+                },
+                {
+                    unique: true
+                }
+            );
+
+
+        const PORT =
+            process.env.PORT ||
+            3001;
+
+
+        app.listen(
+            PORT,
+            "0.0.0.0",
+            () => {
+
+                console.log(
+                    `Serveur lancé sur le port ${PORT}`
+                );
+
+            }
+        );
 
     } catch (error) {
 
@@ -2213,5 +2296,6 @@ async function startServer() {
     }
 
 }
+
 
 startServer();
