@@ -10,12 +10,30 @@ import { fileURLToPath } from "url";
 dotenv.config();
 
 /* ================================================= */
+/*                    CONFIGURATION                  */
+/* ================================================= */
+
+const PORT = process.env.PORT || 3001;
+const MONGODB_URI = process.env.MONGODB_URI;
+const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
+
+if (!MONGODB_URI) {
+    console.error("❌ MONGODB_URI est manquant.");
+    process.exit(1);
+}
+
+if (!OPENAI_API_KEY) {
+    console.warn(
+        "⚠️ OPENAI_API_KEY est manquant. La génération IA ne fonctionnera pas."
+    );
+}
+
+
+/* ================================================= */
 /*                    MONGODB                        */
 /* ================================================= */
 
-const client = new MongoClient(
-    process.env.MONGODB_URI
-);
+const client = new MongoClient(MONGODB_URI);
 
 let db;
 
@@ -26,8 +44,12 @@ let db;
 
 const app = express();
 
+app.disable("x-powered-by");
+
 app.use(
-    express.json()
+    express.json({
+        limit: "1mb"
+    })
 );
 
 app.use(
@@ -57,9 +79,11 @@ app.use(
 /*                     OPENAI                        */
 /* ================================================= */
 
-const openai = new OpenAI({
-    apiKey: process.env.OPENAI_API_KEY
-});
+const openai = OPENAI_API_KEY
+    ? new OpenAI({
+        apiKey: OPENAI_API_KEY
+    })
+    : null;
 
 
 /* ================================================= */
@@ -67,9 +91,9 @@ const openai = new OpenAI({
 /* ================================================= */
 
 
-/* ========================= */
-/* Hash mot de passe         */
-/* ========================= */
+/* ================================================= */
+/*              MOTS DE PASSE                        */
+/* ================================================= */
 
 function hashPassword(password) {
 
@@ -83,10 +107,7 @@ function hashPassword(password) {
                 password,
                 salt,
                 64,
-                (
-                    error,
-                    derivedKey
-                ) => {
+                (error, derivedKey) => {
 
                     if (error) {
                         reject(error);
@@ -94,9 +115,7 @@ function hashPassword(password) {
                     }
 
                     resolve(
-                        salt.toString("hex")
-                        + ":"
-                        + derivedKey.toString("hex")
+                        `${salt.toString("hex")}:${derivedKey.toString("hex")}`
                     );
 
                 }
@@ -104,13 +123,8 @@ function hashPassword(password) {
 
         }
     );
-
 }
 
-
-/* ========================= */
-/* Vérifier mot de passe     */
-/* ========================= */
 
 function verifyPassword(
     password,
@@ -120,71 +134,71 @@ function verifyPassword(
     return new Promise(
         (resolve, reject) => {
 
-            const parts =
-                storedHash.split(":");
+            try {
 
-            if (parts.length !== 2) {
+                const parts =
+                    storedHash.split(":");
 
-                resolve(false);
-                return;
+                if (parts.length !== 2) {
+                    resolve(false);
+                    return;
+                }
 
-            }
-
-            const salt =
-                Buffer.from(
-                    parts[0],
-                    "hex"
-                );
-
-            const originalHash =
-                Buffer.from(
-                    parts[1],
-                    "hex"
-                );
-
-            crypto.scrypt(
-                password,
-                salt,
-                64,
-                (
-                    error,
-                    derivedKey
-                ) => {
-
-                    if (error) {
-                        reject(error);
-                        return;
-                    }
-
-                    if (
-                        originalHash.length !==
-                        derivedKey.length
-                    ) {
-
-                        resolve(false);
-                        return;
-
-                    }
-
-                    resolve(
-                        crypto.timingSafeEqual(
-                            originalHash,
-                            derivedKey
-                        )
+                const salt =
+                    Buffer.from(
+                        parts[0],
+                        "hex"
                     );
 
-                }
-            );
+                const originalHash =
+                    Buffer.from(
+                        parts[1],
+                        "hex"
+                    );
+
+                crypto.scrypt(
+                    password,
+                    salt,
+                    64,
+                    (error, derivedKey) => {
+
+                        if (error) {
+                            reject(error);
+                            return;
+                        }
+
+                        if (
+                            originalHash.length !==
+                            derivedKey.length
+                        ) {
+
+                            resolve(false);
+                            return;
+
+                        }
+
+                        resolve(
+                            crypto.timingSafeEqual(
+                                originalHash,
+                                derivedKey
+                            )
+                        );
+
+                    }
+                );
+
+            } catch {
+                resolve(false);
+            }
 
         }
     );
-
 }
 
 
-/* ========================= */
-/* Token session             */
-/* ========================= */
+/* ================================================= */
+/*                    SESSIONS                       */
+/* ================================================= */
 
 function createSessionToken() {
 
@@ -194,10 +208,6 @@ function createSessionToken() {
 
 }
 
-
-/* ========================= */
-/* Hash token session        */
-/* ========================= */
 
 function hashSessionToken(token) {
 
@@ -209,9 +219,9 @@ function hashSessionToken(token) {
 }
 
 
-/* ========================= */
-/* Lire cookie session       */
-/* ========================= */
+/* ================================================= */
+/*                COOKIES SESSION                    */
+/* ================================================= */
 
 function getSessionToken(req) {
 
@@ -242,18 +252,21 @@ function getSessionToken(req) {
         return null;
     }
 
-    return decodeURIComponent(
-        sessionCookie.substring(
-            "capcontrole_session=".length
-        )
-    );
+    try {
 
+        return decodeURIComponent(
+            sessionCookie.substring(
+                "capcontrole_session=".length
+            )
+        );
+
+    } catch {
+
+        return null;
+
+    }
 }
 
-
-/* ========================= */
-/* Créer cookie session      */
-/* ========================= */
 
 function setSessionCookie(
     res,
@@ -261,21 +274,14 @@ function setSessionCookie(
 ) {
 
     const isProduction =
-        process.env.NODE_ENV ===
-        "production";
+        process.env.NODE_ENV === "production";
 
     const cookie = [
-
         `capcontrole_session=${encodeURIComponent(token)}`,
-
         "HttpOnly",
-
         "Path=/",
-
         "SameSite=Lax",
-
         "Max-Age=2592000"
-
     ];
 
     if (isProduction) {
@@ -286,29 +292,42 @@ function setSessionCookie(
         "Set-Cookie",
         cookie.join("; ")
     );
-
 }
 
-
-/* ========================= */
-/* Supprimer cookie          */
-/* ========================= */
 
 function clearSessionCookie(res) {
 
+    const isProduction =
+        process.env.NODE_ENV === "production";
+
+    const cookie = [
+        "capcontrole_session=",
+        "HttpOnly",
+        "Path=/",
+        "SameSite=Lax",
+        "Max-Age=0"
+    ];
+
+    if (isProduction) {
+        cookie.push("Secure");
+    }
+
     res.setHeader(
         "Set-Cookie",
-        "capcontrole_session=; HttpOnly; Path=/; SameSite=Lax; Max-Age=0"
+        cookie.join("; ")
     );
-
 }
 
 
 /* ================================================= */
-/*              UTILISATEUR CONNECTÉ                */
+/*             UTILISATEUR CONNECTÉ                  */
 /* ================================================= */
 
 async function getCurrentUser(req) {
+
+    if (!db) {
+        return null;
+    }
 
     const token =
         getSessionToken(req);
@@ -332,7 +351,8 @@ async function getCurrentUser(req) {
     }
 
     if (
-        session.expiresAt < new Date()
+        !session.expiresAt ||
+        session.expiresAt <= new Date()
     ) {
 
         await db
@@ -353,9 +373,38 @@ async function getCurrentUser(req) {
                     session.userId
             });
 
-    return user || null;
+    if (!user) {
 
+        await db
+            .collection("sessions")
+            .deleteOne({
+                _id:
+                    session._id
+            });
+
+        return null;
+    }
+
+    return user;
 }
+
+
+/* ================================================= */
+/*                  ROUTE DE TEST                    */
+/* ================================================= */
+
+app.get(
+    "/api/health",
+    (req, res) => {
+
+        res.json({
+            success: true,
+            server: "Cap Contrôle",
+            database: !!db
+        });
+
+    }
+);
 
 
 /* ================================================= */
@@ -375,9 +424,9 @@ app.post(
             } = req.body;
 
             if (
-                !username ||
-                !email ||
-                !password
+                typeof username !== "string" ||
+                typeof email !== "string" ||
+                typeof password !== "string"
             ) {
 
                 return res.status(400).json({
@@ -449,7 +498,7 @@ app.post(
                 db.collection("users");
 
 
-            /* Vérifier email */
+            /* Vérification e-mail */
 
             const existingEmail =
                 await users.findOne({
@@ -468,7 +517,7 @@ app.post(
             }
 
 
-            /* Vérifier pseudo */
+            /* Vérification pseudo */
 
             const existingUsername =
                 await users.findOne({
@@ -495,7 +544,7 @@ app.post(
                 );
 
 
-            /* Créer utilisateur */
+            /* Création */
 
             const user = {
 
@@ -527,7 +576,7 @@ app.post(
                 );
 
 
-            /* Session automatique */
+            /* Session */
 
             const token =
                 createSessionToken();
@@ -569,7 +618,7 @@ app.post(
             );
 
 
-            res.json({
+            return res.json({
 
                 success:
                     true,
@@ -592,11 +641,23 @@ app.post(
         } catch (error) {
 
             console.error(
-                "Erreur inscription :",
+                "❌ Erreur inscription :",
                 error
             );
 
-            res.status(500).json({
+            if (
+                error.code === 11000
+            ) {
+
+                return res.status(409).json({
+                    success: false,
+                    error:
+                        "Cet e-mail ou ce pseudo est déjà utilisé."
+                });
+
+            }
+
+            return res.status(500).json({
 
                 success:
                     false,
@@ -628,8 +689,8 @@ app.post(
             } = req.body;
 
             if (
-                !email ||
-                !password
+                typeof email !== "string" ||
+                typeof password !== "string"
             ) {
 
                 return res.status(400).json({
@@ -722,7 +783,7 @@ app.post(
             );
 
 
-            res.json({
+            return res.json({
 
                 success:
                     true,
@@ -745,11 +806,11 @@ app.post(
         } catch (error) {
 
             console.error(
-                "Erreur connexion :",
+                "❌ Erreur connexion :",
                 error
             );
 
-            res.status(500).json({
+            return res.status(500).json({
 
                 success:
                     false,
@@ -766,7 +827,7 @@ app.post(
 
 
 /* ================================================= */
-/*                    UTILISATEUR                    */
+/*                       /ME                         */
 /* ================================================= */
 
 app.get(
@@ -781,13 +842,12 @@ app.get(
             if (!user) {
 
                 return res.json({
-                    loggedIn:
-                        false
+                    loggedIn: false
                 });
 
             }
 
-            res.json({
+            return res.json({
 
                 loggedIn:
                     true,
@@ -810,11 +870,11 @@ app.get(
         } catch (error) {
 
             console.error(
-                "Erreur /me :",
+                "❌ Erreur /me :",
                 error
             );
 
-            res.status(500).json({
+            return res.status(500).json({
                 error:
                     "Erreur serveur."
             });
@@ -855,19 +915,18 @@ app.post(
 
             clearSessionCookie(res);
 
-            res.json({
-                success:
-                    true
+            return res.json({
+                success: true
             });
 
         } catch (error) {
 
             console.error(
-                "Erreur déconnexion :",
+                "❌ Erreur déconnexion :",
                 error
             );
 
-            res.status(500).json({
+            return res.status(500).json({
                 error:
                     "Erreur serveur."
             });
@@ -879,13 +938,8 @@ app.post(
 
 
 /* ================================================= */
-/*                 SÉRIE + RECORD                    */
+/*                    STATISTIQUES                   */
 /* ================================================= */
-
-
-/* ========================= */
-/* Récupérer statistiques    */
-/* ========================= */
 
 app.get(
     "/api/stats",
@@ -905,24 +959,24 @@ app.get(
 
             }
 
-            res.json({
+            return res.json({
 
                 streak:
-                    user.streak || 0,
+                    Number(user.streak) || 0,
 
                 bestStreak:
-                    user.bestStreak || 0
+                    Number(user.bestStreak) || 0
 
             });
 
         } catch (error) {
 
             console.error(
-                "Erreur récupération statistiques :",
+                "❌ Erreur statistiques :",
                 error
             );
 
-            res.status(500).json({
+            return res.status(500).json({
                 error:
                     "Erreur serveur."
             });
@@ -932,10 +986,6 @@ app.get(
     }
 );
 
-
-/* ========================= */
-/* Sauvegarder statistiques  */
-/* ========================= */
 
 app.put(
     "/api/stats",
@@ -956,18 +1006,16 @@ app.put(
             }
 
             const streak =
-                Number(
-                    req.body.streak
-                );
+                Number(req.body.streak);
 
             const bestStreak =
-                Number(
-                    req.body.bestStreak
-                );
+                Number(req.body.bestStreak);
 
             if (
                 !Number.isFinite(streak) ||
-                !Number.isFinite(bestStreak)
+                !Number.isFinite(bestStreak) ||
+                streak < 0 ||
+                bestStreak < 0
             ) {
 
                 return res.status(400).json({
@@ -987,27 +1035,28 @@ app.put(
                     {
                         $set: {
 
-                            streak,
+                            streak:
+                                Math.floor(streak),
 
-                            bestStreak
+                            bestStreak:
+                                Math.floor(bestStreak)
 
                         }
                     }
                 );
 
-            res.json({
-                success:
-                    true
+            return res.json({
+                success: true
             });
 
         } catch (error) {
 
             console.error(
-                "Erreur sauvegarde statistiques :",
+                "❌ Erreur sauvegarde statistiques :",
                 error
             );
 
-            res.status(500).json({
+            return res.status(500).json({
                 error:
                     "Erreur serveur."
             });
@@ -1021,11 +1070,6 @@ app.put(
 /* ================================================= */
 /*                    HISTORIQUE                     */
 /* ================================================= */
-
-
-/* ========================= */
-/* Récupérer historique      */
-/* ========================= */
 
 app.get(
     "/api/history",
@@ -1058,18 +1102,18 @@ app.get(
                     })
                     .toArray();
 
-            res.json(
+            return res.json(
                 history
             );
 
         } catch (error) {
 
             console.error(
-                "Erreur récupération historique :",
+                "❌ Erreur récupération historique :",
                 error
             );
 
-            res.status(500).json({
+            return res.status(500).json({
                 error:
                     "Erreur serveur."
             });
@@ -1079,10 +1123,6 @@ app.get(
     }
 );
 
-
-/* ========================= */
-/* Ajouter fiche             */
-/* ========================= */
 
 app.post(
     "/api/history",
@@ -1102,15 +1142,18 @@ app.post(
 
             }
 
-            const {
-                course,
-                result
-            } = req.body;
+            const course =
+                typeof req.body.course === "string"
+                    ? req.body.course.trim()
+                    : "";
+
+            const result =
+                req.body.result;
 
             if (
-                typeof course !== "string" ||
-                !course.trim() ||
-                !result
+                !course ||
+                result === undefined ||
+                result === null
             ) {
 
                 return res.status(400).json({
@@ -1120,18 +1163,25 @@ app.post(
 
             }
 
+            const now =
+                new Date();
+
             const historyItem = {
 
                 userId:
                     user._id,
 
-                course:
-                    course.trim(),
+                course,
 
                 result,
 
+                date:
+                    now.toLocaleString(
+                        "fr-FR"
+                    ),
+
                 createdAt:
-                    new Date()
+                    now
 
             };
 
@@ -1142,7 +1192,7 @@ app.post(
                         historyItem
                     );
 
-            res.json({
+            return res.json({
 
                 success:
                     true,
@@ -1161,11 +1211,11 @@ app.post(
         } catch (error) {
 
             console.error(
-                "Erreur ajout historique :",
+                "❌ Erreur ajout historique :",
                 error
             );
 
-            res.status(500).json({
+            return res.status(500).json({
                 error:
                     "Erreur serveur."
             });
@@ -1176,9 +1226,9 @@ app.post(
 );
 
 
-/* ========================= */
-/* Renommer fiche            */
-/* ========================= */
+/* ================================================= */
+/*                 RENOMMER UNE FICHE                */
+/* ================================================= */
 
 app.put(
     "/api/history/:id",
@@ -1211,14 +1261,12 @@ app.put(
 
             }
 
-            const {
-                course
-            } = req.body;
+            const course =
+                typeof req.body.course === "string"
+                    ? req.body.course.trim()
+                    : "";
 
-            if (
-                typeof course !== "string" ||
-                !course.trim()
-            ) {
+            if (!course) {
 
                 return res.status(400).json({
                     error:
@@ -1242,8 +1290,7 @@ app.put(
                         },
                         {
                             $set: {
-                                course:
-                                    course.trim()
+                                course
                             }
                         }
                     );
@@ -1259,19 +1306,18 @@ app.put(
 
             }
 
-            res.json({
-                success:
-                    true
+            return res.json({
+                success: true
             });
 
         } catch (error) {
 
             console.error(
-                "Erreur renommage historique :",
+                "❌ Erreur renommage fiche :",
                 error
             );
 
-            res.status(500).json({
+            return res.status(500).json({
                 error:
                     "Erreur serveur."
             });
@@ -1282,9 +1328,9 @@ app.put(
 );
 
 
-/* ========================= */
-/* Supprimer fiche           */
-/* ========================= */
+/* ================================================= */
+/*                 SUPPRIMER UNE FICHE               */
+/* ================================================= */
 
 app.delete(
     "/api/history/:id",
@@ -1343,19 +1389,18 @@ app.delete(
 
             }
 
-            res.json({
-                success:
-                    true
+            return res.json({
+                success: true
             });
 
         } catch (error) {
 
             console.error(
-                "Erreur suppression historique :",
+                "❌ Erreur suppression fiche :",
                 error
             );
 
-            res.status(500).json({
+            return res.status(500).json({
                 error:
                     "Erreur serveur."
             });
@@ -1367,13 +1412,8 @@ app.delete(
 
 
 /* ================================================= */
-/*                    CONTRÔLES                      */
+/*                     CONTRÔLES                     */
 /* ================================================= */
-
-
-/* ========================= */
-/* Récupérer contrôles       */
-/* ========================= */
 
 app.get(
     "/api/controls",
@@ -1406,18 +1446,18 @@ app.get(
                     })
                     .toArray();
 
-            res.json(
+            return res.json(
                 controls
             );
 
         } catch (error) {
 
             console.error(
-                "Erreur récupération contrôles :",
+                "❌ Erreur récupération contrôles :",
                 error
             );
 
-            res.status(500).json({
+            return res.status(500).json({
                 error:
                     "Erreur serveur."
             });
@@ -1427,10 +1467,6 @@ app.get(
     }
 );
 
-
-/* ========================= */
-/* Ajouter contrôle          */
-/* ========================= */
 
 app.post(
     "/api/controls",
@@ -1450,11 +1486,20 @@ app.post(
 
             }
 
-            const {
-                subject,
-                chapter,
-                date
-            } = req.body;
+            const subject =
+                typeof req.body.subject === "string"
+                    ? req.body.subject.trim()
+                    : "";
+
+            const chapter =
+                typeof req.body.chapter === "string"
+                    ? req.body.chapter.trim()
+                    : "";
+
+            const date =
+                typeof req.body.date === "string"
+                    ? req.body.date.trim()
+                    : "";
 
             if (
                 !subject ||
@@ -1474,11 +1519,9 @@ app.post(
                 userId:
                     user._id,
 
-                subject:
-                    subject.trim(),
+                subject,
 
-                chapter:
-                    chapter.trim(),
+                chapter,
 
                 date,
 
@@ -1500,7 +1543,7 @@ app.post(
                         control
                     );
 
-            res.json({
+            return res.json({
 
                 success:
                     true,
@@ -1519,11 +1562,11 @@ app.post(
         } catch (error) {
 
             console.error(
-                "Erreur ajout contrôle :",
+                "❌ Erreur ajout contrôle :",
                 error
             );
 
-            res.status(500).json({
+            return res.status(500).json({
                 error:
                     "Erreur serveur."
             });
@@ -1534,9 +1577,9 @@ app.post(
 );
 
 
-/* ========================= */
-/* Modifier progression      */
-/* ========================= */
+/* ================================================= */
+/*              MODIFIER PROGRESSION                 */
+/* ================================================= */
 
 app.put(
     "/api/controls/:id",
@@ -1587,6 +1630,15 @@ app.put(
 
             }
 
+            const safeProgress =
+                Math.min(
+                    100,
+                    Math.max(
+                        0,
+                        progress
+                    )
+                );
+
             const result =
                 await db
                     .collection("controls")
@@ -1602,16 +1654,8 @@ app.put(
                         },
                         {
                             $set: {
-
                                 progress:
-                                    Math.min(
-                                        100,
-                                        Math.max(
-                                            0,
-                                            progress
-                                        )
-                                    )
-
+                                    safeProgress
                             }
                         }
                     );
@@ -1627,19 +1671,19 @@ app.put(
 
             }
 
-            res.json({
-                success:
-                    true
+            return res.json({
+                success: true,
+                progress: safeProgress
             });
 
         } catch (error) {
 
             console.error(
-                "Erreur modification contrôle :",
+                "❌ Erreur modification progression :",
                 error
             );
 
-            res.status(500).json({
+            return res.status(500).json({
                 error:
                     "Erreur serveur."
             });
@@ -1650,9 +1694,9 @@ app.put(
 );
 
 
-/* ========================= */
-/* Supprimer contrôle        */
-/* ========================= */
+/* ================================================= */
+/*                SUPPRIMER CONTRÔLE                */
+/* ================================================= */
 
 app.delete(
     "/api/controls/:id",
@@ -1711,19 +1755,18 @@ app.delete(
 
             }
 
-            res.json({
-                success:
-                    true
+            return res.json({
+                success: true
             });
 
         } catch (error) {
 
             console.error(
-                "Erreur suppression contrôle :",
+                "❌ Erreur suppression contrôle :",
                 error
             );
 
-            res.status(500).json({
+            return res.status(500).json({
                 error:
                     "Erreur serveur."
             });
@@ -1742,20 +1785,23 @@ app.post(
     "/generate",
     async (req, res) => {
 
-        console.log(
-            "Génération demandée"
-        );
-
         try {
 
-            const {
-                course
-            } = req.body;
+            if (!openai) {
 
-            if (
-                !course ||
-                typeof course !== "string"
-            ) {
+                return res.status(503).json({
+                    error:
+                        "L'IA n'est pas configurée sur le serveur."
+                });
+
+            }
+
+            const course =
+                typeof req.body.course === "string"
+                    ? req.body.course.trim()
+                    : "";
+
+            if (!course) {
 
                 return res.status(400).json({
                     error:
@@ -1776,41 +1822,41 @@ app.post(
             }
 
             console.log(
-                "COURS REÇU :"
-            );
-
-            console.log(
-                course
+                "🤖 Génération IA demandée."
             );
 
 
             const response =
-                await openai
-                    .chat
-                    .completions
-                    .create({
+                await openai.chat.completions.create({
 
-                        model:
-                            "gpt-4.1-mini",
+                    model:
+                        "gpt-4.1-mini",
 
-                        messages: [
+                    response_format: {
+                        type:
+                            "json_object"
+                    },
 
-                            {
-                                role:
-                                    "system",
+                    messages: [
 
-                                content: `
-Tu es un professeur.
+                        {
+                            role:
+                                "system",
 
-Réponds UNIQUEMENT avec du JSON valide.
+                            content: `
+Tu es un professeur qui aide un lycéen à réviser.
 
-Format :
+Analyse le cours fourni.
+
+Réponds uniquement avec un objet JSON valide.
+
+Format obligatoire :
 
 {
-  "summary": "résumé",
+  "summary": "résumé clair du cours",
   "keyPoints": [
-    "point 1",
-    "point 2"
+    "point important 1",
+    "point important 2"
   ],
   "quiz": [
     {
@@ -1820,60 +1866,119 @@ Format :
   ]
 }
 
-Aucun texte avant ou après le JSON.
+Le résumé doit être compréhensible.
+Les points clés doivent être utiles pour réviser.
+Crée plusieurs questions de quiz.
 `
-                            },
+                        },
 
-                            {
-                                role:
-                                    "user",
+                        {
+                            role:
+                                "user",
 
-                                content:
-                                    course
-                            }
+                            content:
+                                course
+                        }
 
-                        ]
+                    ]
 
-                    });
+                });
 
 
             const content =
                 response
-                    .choices[0]
-                    .message
-                    .content;
+                    ?.choices?.[0]
+                    ?.message?.content;
 
 
-            const cleanContent =
-                content
-                    .replace(
-                        /```json/g,
-                        ""
-                    )
-                    .replace(
-                        /```/g,
-                        ""
-                    )
-                    .trim();
+            if (!content) {
+
+                throw new Error(
+                    "L'IA n'a retourné aucune réponse."
+                );
+
+            }
 
 
-            res.json(
-                JSON.parse(
-                    cleanContent
+            let parsed;
+
+            try {
+
+                parsed =
+                    JSON.parse(
+                        content
+                    );
+
+            } catch {
+
+                const cleaned =
+                    content
+                        .replace(
+                            /^```json\s*/i,
+                            ""
+                        )
+                        .replace(
+                            /^```\s*/i,
+                            ""
+                        )
+                        .replace(
+                            /\s*```$/i,
+                            ""
+                        )
+                        .trim();
+
+                parsed =
+                    JSON.parse(
+                        cleaned
+                    );
+
+            }
+
+
+            if (
+                !parsed.summary
+            ) {
+
+                parsed.summary = "";
+
+            }
+
+            if (
+                !Array.isArray(
+                    parsed.keyPoints
                 )
+            ) {
+
+                parsed.keyPoints = [];
+
+            }
+
+            if (
+                !Array.isArray(
+                    parsed.quiz
+                )
+            ) {
+
+                parsed.quiz = [];
+
+            }
+
+            return res.json(
+                parsed
             );
 
         } catch (error) {
 
             console.error(
-                "Erreur génération IA :",
+                "❌ Erreur génération IA :",
                 error
             );
 
-            res.status(500).json({
+            return res.status(500).json({
 
                 error:
-                    error.message
+                    error?.message ||
+                    "Erreur lors de la génération IA."
 
             });
 
@@ -1887,13 +1992,15 @@ Aucun texte avant ou après le JSON.
 /*                     PARTAGE                       */
 /* ================================================= */
 
-
 /*
-    Créer un code de partage.
+    IMPORTANT :
 
-    La fiche partagée est enregistrée
+    Les fiches partagées sont enregistrées
     dans MongoDB.
+
+    Elles ne dépendent PAS du localStorage.
 */
+
 
 app.post(
     "/share",
@@ -1913,15 +2020,18 @@ app.post(
 
             }
 
-            const {
-                course,
-                result
-            } = req.body;
+            const course =
+                typeof req.body.course === "string"
+                    ? req.body.course.trim()
+                    : "";
+
+            const result =
+                req.body.result;
 
             if (
-                typeof course !== "string" ||
-                !course.trim() ||
-                !result
+                !course ||
+                result === undefined ||
+                result === null
             ) {
 
                 return res.status(400).json({
@@ -1932,13 +2042,12 @@ app.post(
             }
 
 
-            /* Générer un code */
+            /* Génération d'un code unique */
 
             let code;
+            let exists = true;
 
-            let existing;
-
-            do {
+            while (exists) {
 
                 code =
                     crypto
@@ -1946,7 +2055,7 @@ app.post(
                         .toString("hex")
                         .toUpperCase();
 
-                existing =
+                const existing =
                     await db
                         .collection(
                             "sharedSheets"
@@ -1955,10 +2064,13 @@ app.post(
                             code
                         });
 
-            } while (existing);
+                exists =
+                    !!existing;
+
+            }
 
 
-            /* Enregistrer dans MongoDB */
+            /* Enregistrement MongoDB */
 
             await db
                 .collection(
@@ -1971,8 +2083,7 @@ app.post(
                     ownerId:
                         user._id,
 
-                    course:
-                        course.trim(),
+                    course,
 
                     result,
 
@@ -1982,7 +2093,7 @@ app.post(
                 });
 
 
-            res.json({
+            return res.json({
 
                 success:
                     true,
@@ -1994,14 +2105,14 @@ app.post(
         } catch (error) {
 
             console.error(
-                "Erreur partage :",
+                "❌ Erreur partage :",
                 error
             );
 
-            res.status(500).json({
+            return res.status(500).json({
 
                 error:
-                    "Erreur partage."
+                    "Erreur lors du partage."
 
             });
 
@@ -2011,10 +2122,9 @@ app.post(
 );
 
 
-/*
-    Récupérer une fiche partagée
-    avec son code.
-*/
+/* ================================================= */
+/*              RÉCUPÉRER PARTAGE                   */
+/* ================================================= */
 
 app.get(
     "/share/:code",
@@ -2023,9 +2133,20 @@ app.get(
         try {
 
             const code =
-                req.params.code
-                    .trim()
-                    .toUpperCase();
+                typeof req.params.code === "string"
+                    ? req.params.code
+                        .trim()
+                        .toUpperCase()
+                    : "";
+
+            if (!code) {
+
+                return res.status(400).json({
+                    error:
+                        "Code de partage invalide."
+                });
+
+            }
 
             const sheet =
                 await db
@@ -2039,36 +2160,38 @@ app.get(
             if (!sheet) {
 
                 return res.status(404).json({
-
                     error:
                         "Fiche introuvable."
-
                 });
 
             }
 
-            res.json({
+            return res.json({
+
+                success:
+                    true,
 
                 course:
                     sheet.course,
 
                 result:
-                    sheet.result
+                    sheet.result,
+
+                code:
+                    sheet.code
 
             });
 
         } catch (error) {
 
             console.error(
-                "Erreur récupération partage :",
+                "❌ Erreur récupération partage :",
                 error
             );
 
-            res.status(500).json({
-
+            return res.status(500).json({
                 error:
                     "Erreur serveur."
-
             });
 
         }
@@ -2077,13 +2200,9 @@ app.get(
 );
 
 
-/*
-    Importer directement une fiche
-    partagée dans le compte connecté.
-
-    Cela permet de ne plus dépendre
-    du localStorage pour l'historique.
-*/
+/* ================================================= */
+/*          IMPORTER UNE FICHE PARTAGÉE              */
+/* ================================================= */
 
 app.post(
     "/api/history/import",
@@ -2103,14 +2222,14 @@ app.post(
 
             }
 
-            const {
-                code
-            } = req.body;
+            const code =
+                typeof req.body.code === "string"
+                    ? req.body.code
+                        .trim()
+                        .toUpperCase()
+                    : "";
 
-            if (
-                typeof code !== "string" ||
-                !code.trim()
-            ) {
+            if (!code) {
 
                 return res.status(400).json({
                     error:
@@ -2125,10 +2244,7 @@ app.post(
                         "sharedSheets"
                     )
                     .findOne({
-                        code:
-                            code
-                                .trim()
-                                .toUpperCase()
+                        code
                     });
 
             if (!sheet) {
@@ -2140,9 +2256,8 @@ app.post(
 
             }
 
-
-            /* Créer la fiche dans
-               l'historique du compte */
+            const now =
+                new Date();
 
             const historyItem = {
 
@@ -2155,8 +2270,13 @@ app.post(
                 result:
                     sheet.result,
 
+                date:
+                    now.toLocaleString(
+                        "fr-FR"
+                    ),
+
                 createdAt:
-                    new Date()
+                    now
 
             };
 
@@ -2167,8 +2287,7 @@ app.post(
                         historyItem
                     );
 
-
-            res.json({
+            return res.json({
 
                 success:
                     true,
@@ -2187,16 +2306,89 @@ app.post(
         } catch (error) {
 
             console.error(
-                "Erreur import fiche :",
+                "❌ Erreur import fiche :",
                 error
             );
 
-            res.status(500).json({
+            return res.status(500).json({
                 error:
                     "Erreur serveur."
             });
 
         }
+
+    }
+);
+
+
+/* ================================================= */
+/*             NETTOYAGE DES SESSIONS               */
+/* ================================================= */
+
+async function cleanupExpiredSessions() {
+
+    try {
+
+        if (!db) {
+            return;
+        }
+
+        const result =
+            await db
+                .collection("sessions")
+                .deleteMany({
+                    expiresAt: {
+                        $lte:
+                            new Date()
+                    }
+                });
+
+        if (
+            result.deletedCount > 0
+        ) {
+
+            console.log(
+                `🧹 ${result.deletedCount} session(s) expirée(s) supprimée(s).`
+            );
+
+        }
+
+    } catch (error) {
+
+        console.error(
+            "Erreur nettoyage sessions :",
+            error
+        );
+
+    }
+
+}
+
+
+/* ================================================= */
+/*                 ERREUR GLOBALE                    */
+/* ================================================= */
+
+app.use(
+    (error, req, res, next) => {
+
+        console.error(
+            "❌ Erreur Express :",
+            error
+        );
+
+        if (
+            res.headersSent
+        ) {
+
+            return next(error);
+
+        }
+
+        return res.status(500).json({
+            error:
+                "Erreur serveur."
+        });
 
     }
 );
@@ -2210,6 +2402,10 @@ async function startServer() {
 
     try {
 
+        console.log(
+            "🔄 Connexion à MongoDB..."
+        );
+
         await client.connect();
 
         db =
@@ -2218,11 +2414,13 @@ async function startServer() {
             );
 
         console.log(
-            "MongoDB connecté"
+            "✅ MongoDB connecté."
         );
 
 
-        /* Index utiles */
+        /* ================================================= */
+        /*                       INDEX                       */
+        /* ================================================= */
 
         await db
             .collection("users")
@@ -2258,6 +2456,17 @@ async function startServer() {
             );
 
         await db
+            .collection("sessions")
+            .createIndex(
+                {
+                    expiresAt: 1
+                },
+                {
+                    expireAfterSeconds: 0
+                }
+            );
+
+        await db
             .collection("sharedSheets")
             .createIndex(
                 {
@@ -2268,11 +2477,42 @@ async function startServer() {
                 }
             );
 
+        await db
+            .collection("history")
+            .createIndex({
+                userId: 1,
+                createdAt: -1
+            });
 
-        const PORT =
-            process.env.PORT ||
-            3001;
+        await db
+            .collection("controls")
+            .createIndex({
+                userId: 1,
+                date: 1
+            });
 
+
+        console.log(
+            "✅ Index MongoDB vérifiés."
+        );
+
+
+        /* Nettoyage immédiat */
+
+        await cleanupExpiredSessions();
+
+
+        /* Nettoyage toutes les heures */
+
+        setInterval(
+            cleanupExpiredSessions,
+            60 * 60 * 1000
+        );
+
+
+        /* ================================================= */
+        /*                       LISTEN                       */
+        /* ================================================= */
 
         app.listen(
             PORT,
@@ -2280,7 +2520,7 @@ async function startServer() {
             () => {
 
                 console.log(
-                    `Serveur lancé sur le port ${PORT}`
+                    `🚀 Cap Contrôle lancé sur le port ${PORT}`
                 );
 
             }
@@ -2289,9 +2529,11 @@ async function startServer() {
     } catch (error) {
 
         console.error(
-            "Erreur MongoDB :",
+            "❌ Impossible de démarrer le serveur :",
             error
         );
+
+        process.exit(1);
 
     }
 
@@ -2299,3 +2541,47 @@ async function startServer() {
 
 
 startServer();
+
+
+/* ================================================= */
+/*                 ARRÊT PROPRE                      */
+/* ================================================= */
+
+async function shutdown() {
+
+    console.log(
+        "🛑 Arrêt du serveur..."
+    );
+
+    try {
+
+        await client.close();
+
+        console.log(
+            "MongoDB déconnecté."
+        );
+
+        process.exit(0);
+
+    } catch (error) {
+
+        console.error(
+            "Erreur fermeture :",
+            error
+        );
+
+        process.exit(1);
+
+    }
+
+}
+
+process.on(
+    "SIGINT",
+    shutdown
+);
+
+process.on(
+    "SIGTERM",
+    shutdown
+);
