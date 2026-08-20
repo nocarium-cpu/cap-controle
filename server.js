@@ -1275,25 +1275,29 @@ app.put(
 
             }
 
-            const result =
-                await db
-                    .collection("history")
-                    .updateOne(
-                        {
-                            _id:
-                                new ObjectId(
-                                    req.params.id
-                                ),
+            const historyCollection =
+                db.collection("history");
 
-                            userId:
-                                user._id
-                        },
-                        {
-                            $set: {
-                                course
-                            }
+            const historyId =
+                new ObjectId(
+                    req.params.id
+                );
+
+            const result =
+                await historyCollection.updateOne(
+                    {
+                        _id:
+                            historyId,
+
+                        userId:
+                            user._id
+                    },
+                    {
+                        $set: {
+                            course
                         }
-                    );
+                    }
+                );
 
             if (
                 result.matchedCount === 0
@@ -1306,8 +1310,38 @@ app.put(
 
             }
 
+            /*
+             * CORRECTION :
+             * On récupère la fiche complète après
+             * la modification et on la renvoie au client.
+             */
+
+            const updatedHistory =
+                await historyCollection.findOne({
+                    _id:
+                        historyId,
+
+                    userId:
+                        user._id
+                });
+
+            if (!updatedHistory) {
+
+                return res.status(404).json({
+                    error:
+                        "Fiche introuvable après modification."
+                });
+
+            }
+
             return res.json({
-                success: true
+
+                success:
+                    true,
+
+                history:
+                    updatedHistory
+
             });
 
         } catch (error) {
