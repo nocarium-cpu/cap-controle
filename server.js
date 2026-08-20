@@ -2054,13 +2054,62 @@ app.post(
 
             }
 
+            /*
+             * CORRECTION :
+             * Le client envoie maintenant historyId.
+             */
+
+            const historyId =
+                typeof req.body.historyId === "string"
+                    ? req.body.historyId.trim()
+                    : "";
+
+            if (
+                !historyId ||
+                !ObjectId.isValid(historyId)
+            ) {
+
+                return res.status(400).json({
+                    error:
+                        "Identifiant de fiche invalide."
+                });
+
+            }
+
+            /*
+             * On récupère la fiche directement
+             * dans l'historique de l'utilisateur.
+             */
+
+            const historyItem =
+                await db
+                    .collection("history")
+                    .findOne({
+                        _id:
+                            new ObjectId(
+                                historyId
+                            ),
+
+                        userId:
+                            user._id
+                    });
+
+            if (!historyItem) {
+
+                return res.status(404).json({
+                    error:
+                        "Fiche introuvable."
+                });
+
+            }
+
             const course =
-                typeof req.body.course === "string"
-                    ? req.body.course.trim()
+                typeof historyItem.course === "string"
+                    ? historyItem.course.trim()
                     : "";
 
             const result =
-                req.body.result;
+                historyItem.result;
 
             if (
                 !course ||
@@ -2075,8 +2124,9 @@ app.post(
 
             }
 
-
-            /* Génération d'un code unique */
+            /*
+             * Génération d'un code unique.
+             */
 
             let code;
             let exists = true;
@@ -2103,8 +2153,9 @@ app.post(
 
             }
 
-
-            /* Enregistrement MongoDB */
+            /*
+             * Enregistrement MongoDB.
+             */
 
             await db
                 .collection(
@@ -2117,6 +2168,9 @@ app.post(
                     ownerId:
                         user._id,
 
+                    historyId:
+                        historyItem._id,
+
                     course,
 
                     result,
@@ -2125,7 +2179,6 @@ app.post(
                         new Date()
 
                 });
-
 
             return res.json({
 
