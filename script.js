@@ -795,20 +795,41 @@ async function generateRevisionSheet() {
 
         const data = await response.json();
 
-        let history =
-            JSON.parse(
-                localStorage.getItem("capControleHistory")
-            ) || [];
+        const historyResponse =
+            await fetch(
+                "/api/history",
+                {
+                    method: "POST",
         
-        history.unshift({
-            date: new Date().toLocaleString(),
-            course: course,
-            result: data
-        });
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
         
-        localStorage.setItem(
-            "capControleHistory",
-            JSON.stringify(history)
+                    credentials: "include",
+        
+                    body: JSON.stringify({
+                        course: course,
+                        result: data
+                    })
+                }
+            );
+        
+        const historyData =
+            await historyResponse.json();
+        
+        if (!historyResponse.ok) {
+        
+            alert(
+                historyData.error ||
+                "Impossible de sauvegarder la fiche."
+            );
+        
+            return;
+        }
+        
+        history.unshift(
+            historyData.history
         );
         
         renderHistory();
