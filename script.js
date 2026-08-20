@@ -1234,6 +1234,14 @@ const settingsButton =
 const logoutButton =
     document.getElementById("logoutButton");
 
+settingsButton?.addEventListener(
+    "click",
+    () => {
+        profileDropdown?.classList.remove("open");
+        openSettings();
+    }
+);
+
 
 /* Ouvrir / fermer le menu */
 
