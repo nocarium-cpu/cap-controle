@@ -1,7 +1,7 @@
-import { MongoClient, ObjectId } from "mongodb";
 import express from "express";
 import cors from "cors";
 import dotenv from "dotenv";
+import { MongoClient, ObjectId } from "mongodb";
 import OpenAI from "openai";
 import crypto from "crypto";
 import path from "path";
@@ -9,48 +9,17 @@ import { fileURLToPath } from "url";
 
 dotenv.config();
 
-/* ================================================= */
-/*                    CONFIGURATION                  */
-/* ================================================= */
-
-const PORT = process.env.PORT || 3001;
-const MONGODB_URI = process.env.MONGODB_URI;
-const OPENAI_API_KEY = process.env.OPENAI_API_KEY;
-
-if (!MONGODB_URI) {
-    console.error("❌ MONGODB_URI est manquant.");
-    process.exit(1);
-}
-
-if (!OPENAI_API_KEY) {
-    console.warn(
-        "⚠️ OPENAI_API_KEY est manquant. La génération IA ne fonctionnera pas."
-    );
-}
-
-
-/* ================================================= */
-/*                    MONGODB                        */
-/* ================================================= */
-
-const client = new MongoClient(MONGODB_URI);
-
-let db;
-
-
-/* ================================================= */
-/*                    EXPRESS                        */
-/* ================================================= */
-
 const app = express();
+const PORT = process.env.PORT || 3000;
 
-app.disable("x-powered-by");
+const __filename = fileURLToPath(import.meta.url);
+const __dirname = path.dirname(__filename);
 
-app.use(
-    express.json({
-        limit: "1mb"
-    })
-);
+/* =========================================================
+   CONFIGURATION
+========================================================= */
+
+app.use(express.json({ limit: "2mb" }));
 
 app.use(
     cors({
@@ -59,2616 +28,1341 @@ app.use(
     })
 );
 
+app.use(express.static(__dirname));
 
-/* ================================================= */
-/*                 FICHIERS DU SITE                  */
-/* ================================================= */
+/* =========================================================
+   MONGODB
+========================================================= */
 
-const __filename =
-    fileURLToPath(import.meta.url);
+const mongoUrl = process.env.MONGODB_URI;
 
-const __dirname =
-    path.dirname(__filename);
+if (!mongoUrl) {
+    console.error("❌ MONGODB_URI est manquant dans les variables d'environnement.");
+    process.exit(1);
+}
 
-app.use(
-    express.static(__dirname)
-);
+const mongoClient = new MongoClient(mongoUrl);
 
+let db;
+let usersCollection;
+let controlsCollection;
+let historyCollection;
+let sharesCollection;
 
-/* ================================================= */
-/*                     OPENAI                        */
-/* ================================================= */
+async function connectMongoDB() {
+    await mongoClient.connect();
 
-const openai = OPENAI_API_KEY
+    db = mongoClient.db(
+        process.env.MONGODB_DB || "capcontrole"
+    );
+
+    usersCollection = db.collection("users");
+    controlsCollection = db.collection("controls");
+    historyCollection = db.collection("history");
+    sharesCollection = db.collection("shares");
+
+    await usersCollection.createIndex(
+        { email: 1 },
+        { unique: true }
+    );
+
+    await controlsCollection.createIndex({
+        userId: 1
+    });
+
+    await historyCollection.createIndex({
+        userId: 1
+    });
+
+    await sharesCollection.createIndex(
+        { code: 1 },
+        { unique: true }
+    );
+
+    console.log("✅ MongoDB connecté");
+}
+
+/* =========================================================
+   OPENAI
+========================================================= */
+
+const openai = process.env.OPENAI_API_KEY
     ? new OpenAI({
-        apiKey: OPENAI_API_KEY
-    })
+          apiKey: process.env.OPENAI_API_KEY
+      })
     : null;
 
+/* =========================================================
+   SESSIONS
+========================================================= */
 
-/* ================================================= */
-/*                 UTILITAIRES                       */
-/* ================================================= */
+const sessions = new Map();
 
+function createSession(userId) {
+    const token = crypto.randomBytes(32).toString("hex");
 
-/* ================================================= */
-/*              MOTS DE PASSE                        */
-/* ================================================= */
+    sessions.set(token, {
+        userId: String(userId),
+        createdAt: Date.now()
+    });
 
-function hashPassword(password) {
-
-    return new Promise(
-        (resolve, reject) => {
-
-            const salt =
-                crypto.randomBytes(16);
-
-            crypto.scrypt(
-                password,
-                salt,
-                64,
-                (error, derivedKey) => {
-
-                    if (error) {
-                        reject(error);
-                        return;
-                    }
-
-                    resolve(
-                        `${salt.toString("hex")}:${derivedKey.toString("hex")}`
-                    );
-
-                }
-            );
-
-        }
-    );
+    return token;
 }
 
-
-function verifyPassword(
-    password,
-    storedHash
-) {
-
-    return new Promise(
-        (resolve, reject) => {
-
-            try {
-
-                const parts =
-                    storedHash.split(":");
-
-                if (parts.length !== 2) {
-                    resolve(false);
-                    return;
-                }
-
-                const salt =
-                    Buffer.from(
-                        parts[0],
-                        "hex"
-                    );
-
-                const originalHash =
-                    Buffer.from(
-                        parts[1],
-                        "hex"
-                    );
-
-                crypto.scrypt(
-                    password,
-                    salt,
-                    64,
-                    (error, derivedKey) => {
-
-                        if (error) {
-                            reject(error);
-                            return;
-                        }
-
-                        if (
-                            originalHash.length !==
-                            derivedKey.length
-                        ) {
-
-                            resolve(false);
-                            return;
-
-                        }
-
-                        resolve(
-                            crypto.timingSafeEqual(
-                                originalHash,
-                                derivedKey
-                            )
-                        );
-
-                    }
-                );
-
-            } catch {
-                resolve(false);
-            }
-
-        }
-    );
-}
-
-
-/* ================================================= */
-/*                    SESSIONS                       */
-/* ================================================= */
-
-function createSessionToken() {
-
-    return crypto
-        .randomBytes(32)
-        .toString("hex");
-
-}
-
-
-function hashSessionToken(token) {
-
-    return crypto
-        .createHash("sha256")
-        .update(token)
-        .digest("hex");
-
-}
-
-
-/* ================================================= */
-/*                COOKIES SESSION                    */
-/* ================================================= */
-
-function getSessionToken(req) {
-
-    const cookieHeader =
-        req.headers.cookie;
-
-    if (!cookieHeader) {
-        return null;
-    }
-
-    const cookies =
-        cookieHeader
-            .split(";")
-            .map(
-                cookie =>
-                    cookie.trim()
-            );
-
-    const sessionCookie =
-        cookies.find(
-            cookie =>
-                cookie.startsWith(
-                    "capcontrole_session="
-                )
-        );
-
-    if (!sessionCookie) {
-        return null;
-    }
-
-    try {
-
-        return decodeURIComponent(
-            sessionCookie.substring(
-                "capcontrole_session=".length
-            )
-        );
-
-    } catch {
-
-        return null;
-
-    }
-}
-
-
-function setSessionCookie(
-    res,
-    token
-) {
-
-    const isProduction =
-        process.env.NODE_ENV === "production";
-
-    const cookie = [
-        `capcontrole_session=${encodeURIComponent(token)}`,
-        "HttpOnly",
-        "Path=/",
-        "SameSite=Lax",
-        "Max-Age=2592000"
-    ];
-
-    if (isProduction) {
-        cookie.push("Secure");
-    }
-
-    res.setHeader(
-        "Set-Cookie",
-        cookie.join("; ")
-    );
-}
-
-
-function clearSessionCookie(res) {
-
-    const isProduction =
-        process.env.NODE_ENV === "production";
-
-    const cookie = [
-        "capcontrole_session=",
-        "HttpOnly",
-        "Path=/",
-        "SameSite=Lax",
-        "Max-Age=0"
-    ];
-
-    if (isProduction) {
-        cookie.push("Secure");
-    }
-
-    res.setHeader(
-        "Set-Cookie",
-        cookie.join("; ")
-    );
-}
-
-
-/* ================================================= */
-/*             UTILISATEUR CONNECTÉ                  */
-/* ================================================= */
-
-async function getCurrentUser(req) {
-
-    if (!db) {
-        return null;
-    }
-
-    const token =
-        getSessionToken(req);
+function getSessionUserId(req) {
+    const token = req.headers.cookie
+        ?.split(";")
+        .map(cookie => cookie.trim())
+        .find(cookie => cookie.startsWith("session="))
+        ?.split("=")[1];
 
     if (!token) {
         return null;
     }
 
-    const tokenHash =
-        hashSessionToken(token);
-
-    const session =
-        await db
-            .collection("sessions")
-            .findOne({
-                tokenHash
-            });
+    const session = sessions.get(token);
 
     if (!session) {
         return null;
     }
 
-    if (
-        !session.expiresAt ||
-        session.expiresAt <= new Date()
-    ) {
-
-        await db
-            .collection("sessions")
-            .deleteOne({
-                _id:
-                    session._id
-            });
-
-        return null;
-    }
-
-    const user =
-        await db
-            .collection("users")
-            .findOne({
-                _id:
-                    session.userId
-            });
-
-    if (!user) {
-
-        await db
-            .collection("sessions")
-            .deleteOne({
-                _id:
-                    session._id
-            });
-
-        return null;
-    }
-
-    return user;
+    return session.userId;
 }
 
+function setSessionCookie(res, token) {
+    res.setHeader(
+        "Set-Cookie",
+        `session=${token}; HttpOnly; Path=/; SameSite=Lax`
+    );
+}
 
-/* ================================================= */
-/*                  ROUTE DE TEST                    */
-/* ================================================= */
+function clearSessionCookie(res) {
+    res.setHeader(
+        "Set-Cookie",
+        "session=; HttpOnly; Path=/; Max-Age=0; SameSite=Lax"
+    );
+}
 
-app.get(
-    "/api/health",
-    (req, res) => {
+/* =========================================================
+   AUTHENTIFICATION
+========================================================= */
+
+function requireAuth(req, res, next) {
+    const userId = getSessionUserId(req);
+
+    if (!userId) {
+        return res.status(401).json({
+            error: "Tu dois être connecté."
+        });
+    }
+
+    req.userId = userId;
+
+    next();
+}
+
+/* =========================================================
+   MOT DE PASSE
+========================================================= */
+
+function hashPassword(password) {
+    return crypto
+        .createHash("sha256")
+        .update(password)
+        .digest("hex");
+}
+
+/* =========================================================
+   ROUTE PRINCIPALE
+========================================================= */
+
+app.get("/", (req, res) => {
+    res.sendFile(
+        path.join(__dirname, "index.html")
+    );
+});
+
+/* =========================================================
+   INSCRIPTION
+========================================================= */
+
+app.post("/register", async (req, res) => {
+    try {
+        const {
+            username,
+            email,
+            password
+        } = req.body;
+
+        if (!username || !email || !password) {
+            return res.status(400).json({
+                error: "Tous les champs sont obligatoires."
+            });
+        }
+
+        if (username.trim().length < 2) {
+            return res.status(400).json({
+                error: "Le pseudo doit contenir au moins 2 caractères."
+            });
+        }
+
+        if (password.length < 6) {
+            return res.status(400).json({
+                error: "Le mot de passe doit contenir au moins 6 caractères."
+            });
+        }
+
+        const normalizedEmail =
+            email.trim().toLowerCase();
+
+        const existingUser =
+            await usersCollection.findOne({
+                email: normalizedEmail
+            });
+
+        if (existingUser) {
+            return res.status(409).json({
+                error: "Cette adresse e-mail est déjà utilisée."
+            });
+        }
+
+        const user = {
+            username: username.trim(),
+            email: normalizedEmail,
+            password: hashPassword(password),
+            streak: 0,
+            bestStreak: 0,
+            lastRevisionDate: null,
+            createdAt: new Date()
+        };
+
+        const result =
+            await usersCollection.insertOne(user);
+
+        const token =
+            createSession(result.insertedId);
+
+        setSessionCookie(res, token);
+
+        res.status(201).json({
+            message: "Compte créé.",
+            user: {
+                _id: result.insertedId,
+                username: user.username,
+                email: user.email,
+                streak: 0,
+                bestStreak: 0
+            }
+        });
+    } catch (error) {
+        console.error(
+            "Erreur inscription :",
+            error
+        );
+
+        res.status(500).json({
+            error: "Erreur lors de la création du compte."
+        });
+    }
+});
+
+/* =========================================================
+   CONNEXION
+========================================================= */
+
+app.post("/login", async (req, res) => {
+    try {
+        const {
+            email,
+            password
+        } = req.body;
+
+        if (!email || !password) {
+            return res.status(400).json({
+                error: "Remplis tous les champs."
+            });
+        }
+
+        const normalizedEmail =
+            email.trim().toLowerCase();
+
+        const user =
+            await usersCollection.findOne({
+                email: normalizedEmail
+            });
+
+        if (!user) {
+            return res.status(401).json({
+                error: "Adresse e-mail ou mot de passe incorrect."
+            });
+        }
+
+        const passwordHash =
+            hashPassword(password);
+
+        if (user.password !== passwordHash) {
+            return res.status(401).json({
+                error: "Adresse e-mail ou mot de passe incorrect."
+            });
+        }
+
+        const token =
+            createSession(user._id);
+
+        setSessionCookie(res, token);
 
         res.json({
-            success: true,
-            server: "Cap Contrôle",
-            database: !!db
+            message: "Connexion réussie.",
+            user: {
+                _id: user._id,
+                username: user.username,
+                email: user.email,
+                streak: user.streak || 0,
+                bestStreak: user.bestStreak || 0
+            }
         });
+    } catch (error) {
+        console.error(
+            "Erreur connexion :",
+            error
+        );
 
+        res.status(500).json({
+            error: "Erreur lors de la connexion."
+        });
     }
-);
-
-
-/* ================================================= */
-/*                    INSCRIPTION                    */
-/* ================================================= */
-
-app.post(
-    "/register",
-    async (req, res) => {
-
-        try {
-
-            const {
-                username,
-                email,
-                password
-            } = req.body;
-
-            if (
-                typeof username !== "string" ||
-                typeof email !== "string" ||
-                typeof password !== "string"
-            ) {
-
-                return res.status(400).json({
-                    success: false,
-                    error:
-                        "Tous les champs sont obligatoires."
-                });
-
-            }
-
-            const cleanUsername =
-                username.trim();
-
-            const cleanEmail =
-                email
-                    .trim()
-                    .toLowerCase();
-
-            if (
-                cleanUsername.length < 3
-            ) {
-
-                return res.status(400).json({
-                    success: false,
-                    error:
-                        "Le pseudo doit contenir au moins 3 caractères."
-                });
-
-            }
-
-            if (
-                cleanUsername.length > 30
-            ) {
-
-                return res.status(400).json({
-                    success: false,
-                    error:
-                        "Le pseudo est trop long."
-                });
-
-            }
-
-            if (
-                !/^[^\s@]+@[^\s@]+\.[^\s@]+$/
-                    .test(cleanEmail)
-            ) {
-
-                return res.status(400).json({
-                    success: false,
-                    error:
-                        "Adresse e-mail invalide."
-                });
-
-            }
-
-            if (
-                password.length < 8
-            ) {
-
-                return res.status(400).json({
-                    success: false,
-                    error:
-                        "Le mot de passe doit contenir au moins 8 caractères."
-                });
-
-            }
-
-            const users =
-                db.collection("users");
-
-
-            /* Vérification e-mail */
-
-            const existingEmail =
-                await users.findOne({
-                    email:
-                        cleanEmail
-                });
-
-            if (existingEmail) {
-
-                return res.status(409).json({
-                    success: false,
-                    error:
-                        "Cette adresse e-mail est déjà utilisée."
-                });
-
-            }
-
-
-            /* Vérification pseudo */
-
-            const existingUsername =
-                await users.findOne({
-                    usernameLower:
-                        cleanUsername.toLowerCase()
-                });
-
-            if (existingUsername) {
-
-                return res.status(409).json({
-                    success: false,
-                    error:
-                        "Ce pseudo est déjà utilisé."
-                });
-
-            }
-
-
-            /* Hash */
-
-            const passwordHash =
-                await hashPassword(
-                    password
-                );
-
-
-            /* Création */
-
-            const user = {
-
-                username:
-                    cleanUsername,
-
-                usernameLower:
-                    cleanUsername.toLowerCase(),
-
-                email:
-                    cleanEmail,
-
-                passwordHash,
-
-                streak:
-                    0,
-
-                bestStreak:
-                    0,
-
-                createdAt:
-                    new Date()
-
-            };
-
-            const result =
-                await users.insertOne(
-                    user
-                );
-
-
-            /* Session */
-
-            const token =
-                createSessionToken();
-
-            const tokenHash =
-                hashSessionToken(
-                    token
-                );
-
-            await db
-                .collection("sessions")
-                .insertOne({
-
-                    tokenHash,
-
-                    userId:
-                        result.insertedId,
-
-                    createdAt:
-                        new Date(),
-
-                    expiresAt:
-                        new Date(
-                            Date.now()
-                            +
-                            30 *
-                            24 *
-                            60 *
-                            60 *
-                            1000
-                        )
-
-                });
-
-
-            setSessionCookie(
-                res,
-                token
-            );
-
-
+});
+
+/* =========================================================
+   DÉCONNEXION
+========================================================= */
+
+app.post("/logout", (req, res) => {
+    const token = req.headers.cookie
+        ?.split(";")
+        .map(cookie => cookie.trim())
+        .find(cookie => cookie.startsWith("session="))
+        ?.split("=")[1];
+
+    if (token) {
+        sessions.delete(token);
+    }
+
+    clearSessionCookie(res);
+
+    res.json({
+        message: "Déconnexion réussie."
+    });
+});
+
+/* =========================================================
+   UTILISATEUR CONNECTÉ
+========================================================= */
+
+app.get("/me", async (req, res) => {
+    try {
+        const userId =
+            getSessionUserId(req);
+
+        if (!userId) {
             return res.json({
-
-                success:
-                    true,
-
-                user: {
-
-                    id:
-                        result.insertedId,
-
-                    username:
-                        cleanUsername,
-
-                    email:
-                        cleanEmail
-
-                }
-
+                loggedIn: false
             });
-
-        } catch (error) {
-
-            console.error(
-                "❌ Erreur inscription :",
-                error
-            );
-
-            if (
-                error.code === 11000
-            ) {
-
-                return res.status(409).json({
-                    success: false,
-                    error:
-                        "Cet e-mail ou ce pseudo est déjà utilisé."
-                });
-
-            }
-
-            return res.status(500).json({
-
-                success:
-                    false,
-
-                error:
-                    "Erreur serveur."
-
-            });
-
         }
 
-    }
-);
+        const user =
+            await usersCollection.findOne({
+                _id: new ObjectId(userId)
+            });
 
-
-/* ================================================= */
-/*                     CONNEXION                     */
-/* ================================================= */
-
-app.post(
-    "/login",
-    async (req, res) => {
-
-        try {
-
-            const {
-                email,
-                password
-            } = req.body;
-
-            if (
-                typeof email !== "string" ||
-                typeof password !== "string"
-            ) {
-
-                return res.status(400).json({
-                    success: false,
-                    error:
-                        "E-mail et mot de passe obligatoires."
-                });
-
-            }
-
-            const cleanEmail =
-                email
-                    .trim()
-                    .toLowerCase();
-
-            const user =
-                await db
-                    .collection("users")
-                    .findOne({
-                        email:
-                            cleanEmail
-                    });
-
-            if (!user) {
-
-                return res.status(401).json({
-                    success: false,
-                    error:
-                        "E-mail ou mot de passe incorrect."
-                });
-
-            }
-
-            const valid =
-                await verifyPassword(
-                    password,
-                    user.passwordHash
-                );
-
-            if (!valid) {
-
-                return res.status(401).json({
-                    success: false,
-                    error:
-                        "E-mail ou mot de passe incorrect."
-                });
-
-            }
-
-
-            /* Nouvelle session */
-
-            const token =
-                createSessionToken();
-
-            const tokenHash =
-                hashSessionToken(
-                    token
-                );
-
-            await db
-                .collection("sessions")
-                .insertOne({
-
-                    tokenHash,
-
-                    userId:
-                        user._id,
-
-                    createdAt:
-                        new Date(),
-
-                    expiresAt:
-                        new Date(
-                            Date.now()
-                            +
-                            30 *
-                            24 *
-                            60 *
-                            60 *
-                            1000
-                        )
-
-                });
-
-
-            setSessionCookie(
-                res,
-                token
-            );
-
-
+        if (!user) {
             return res.json({
-
-                success:
-                    true,
-
-                user: {
-
-                    id:
-                        user._id,
-
-                    username:
-                        user.username,
-
-                    email:
-                        user.email
-
-                }
-
+                loggedIn: false
             });
-
-        } catch (error) {
-
-            console.error(
-                "❌ Erreur connexion :",
-                error
-            );
-
-            return res.status(500).json({
-
-                success:
-                    false,
-
-                error:
-                    "Erreur serveur."
-
-            });
-
         }
 
+        res.json({
+            loggedIn: true,
+            user: {
+                _id: user._id,
+                username: user.username,
+                email: user.email,
+                streak: user.streak || 0,
+                bestStreak: user.bestStreak || 0,
+                lastRevisionDate:
+                    user.lastRevisionDate || null
+            }
+        });
+    } catch (error) {
+        console.error(
+            "Erreur /me :",
+            error
+        );
+
+        res.status(500).json({
+            error: "Erreur serveur."
+        });
     }
-);
+});
 
-
-/* ================================================= */
-/*                       /ME                         */
-/* ================================================= */
+/* =========================================================
+   CONTRÔLES
+========================================================= */
 
 app.get(
-    "/me",
+    "/api/controls",
+    requireAuth,
     async (req, res) => {
-
         try {
-
-            const user =
-                await getCurrentUser(req);
-
-            if (!user) {
-
-                return res.json({
-                    loggedIn: false
-                });
-
-            }
-
-            return res.json({
-
-                loggedIn:
-                    true,
-
-                user: {
-
-                    id:
-                        user._id,
-
-                    username:
-                        user.username,
-
-                    email:
-                        user.email
-
-                }
-
-            });
-
-        } catch (error) {
-
-            console.error(
-                "❌ Erreur /me :",
-                error
-            );
-
-            return res.status(500).json({
-                error:
-                    "Erreur serveur."
-            });
-
-        }
-
-    }
-);
-
-
-/* ================================================= */
-/*                    DÉCONNEXION                    */
-/* ================================================= */
-
-app.post(
-    "/logout",
-    async (req, res) => {
-
-        try {
-
-            const token =
-                getSessionToken(req);
-
-            if (token) {
-
-                const tokenHash =
-                    hashSessionToken(
-                        token
-                    );
-
-                await db
-                    .collection("sessions")
-                    .deleteOne({
-                        tokenHash
-                    });
-
-            }
-
-            clearSessionCookie(res);
-
-            return res.json({
-                success: true
-            });
-
-        } catch (error) {
-
-            console.error(
-                "❌ Erreur déconnexion :",
-                error
-            );
-
-            return res.status(500).json({
-                error:
-                    "Erreur serveur."
-            });
-
-        }
-
-    }
-);
-
-
-/* ================================================= */
-/*                    STATISTIQUES                   */
-/* ================================================= */
-
-app.get(
-    "/api/stats",
-    async (req, res) => {
-
-        try {
-
-            const user =
-                await getCurrentUser(req);
-
-            if (!user) {
-
-                return res.status(401).json({
-                    error:
-                        "Utilisateur non connecté."
-                });
-
-            }
-
-            return res.json({
-
-                streak:
-                    Number(user.streak) || 0,
-
-                bestStreak:
-                    Number(user.bestStreak) || 0
-
-            });
-
-        } catch (error) {
-
-            console.error(
-                "❌ Erreur statistiques :",
-                error
-            );
-
-            return res.status(500).json({
-                error:
-                    "Erreur serveur."
-            });
-
-        }
-
-    }
-);
-
-
-app.put(
-    "/api/stats",
-    async (req, res) => {
-
-        try {
-
-            const user =
-                await getCurrentUser(req);
-
-            if (!user) {
-
-                return res.status(401).json({
-                    error:
-                        "Utilisateur non connecté."
-                });
-
-            }
-
-            const streak =
-                Number(req.body.streak);
-
-            const bestStreak =
-                Number(req.body.bestStreak);
-
-            if (
-                !Number.isFinite(streak) ||
-                !Number.isFinite(bestStreak) ||
-                streak < 0 ||
-                bestStreak < 0
-            ) {
-
-                return res.status(400).json({
-                    error:
-                        "Statistiques invalides."
-                });
-
-            }
-
-            await db
-                .collection("users")
-                .updateOne(
-                    {
-                        _id:
-                            user._id
-                    },
-                    {
-                        $set: {
-
-                            streak:
-                                Math.floor(streak),
-
-                            bestStreak:
-                                Math.floor(bestStreak)
-
-                        }
-                    }
-                );
-
-            return res.json({
-                success: true
-            });
-
-        } catch (error) {
-
-            console.error(
-                "❌ Erreur sauvegarde statistiques :",
-                error
-            );
-
-            return res.status(500).json({
-                error:
-                    "Erreur serveur."
-            });
-
-        }
-
-    }
-);
-
-
-/* ================================================= */
-/*                    HISTORIQUE                     */
-/* ================================================= */
-
-app.get(
-    "/api/history",
-    async (req, res) => {
-
-        try {
-
-            const user =
-                await getCurrentUser(req);
-
-            if (!user) {
-
-                return res.status(401).json({
-                    error:
-                        "Utilisateur non connecté."
-                });
-
-            }
-
-            const history =
-                await db
-                    .collection("history")
+            const controls =
+                await controlsCollection
                     .find({
-                        userId:
-                            user._id
+                        userId: new ObjectId(req.userId)
                     })
                     .sort({
-                        createdAt:
-                            -1
+                        date: 1
                     })
                     .toArray();
 
-            return res.json(
-                history
-            );
-
+            res.json(controls);
         } catch (error) {
-
             console.error(
-                "❌ Erreur récupération historique :",
+                "Erreur chargement contrôles :",
                 error
             );
 
-            return res.status(500).json({
-                error:
-                    "Erreur serveur."
+            res.status(500).json({
+                error: "Impossible de charger les contrôles."
             });
-
         }
-
     }
 );
 
+app.post(
+    "/api/controls",
+    requireAuth,
+    async (req, res) => {
+        try {
+            const {
+                subject,
+                chapter,
+                date
+            } = req.body;
+
+            if (!subject || !chapter || !date) {
+                return res.status(400).json({
+                    error: "Tous les champs sont obligatoires."
+                });
+            }
+
+            const control = {
+                userId: new ObjectId(req.userId),
+                subject: String(subject).trim(),
+                chapter: String(chapter).trim(),
+                date: String(date),
+                progress: 0,
+                createdAt: new Date()
+            };
+
+            const result =
+                await controlsCollection.insertOne(
+                    control
+                );
+
+            control._id = result.insertedId;
+
+            res.status(201).json({
+                control
+            });
+        } catch (error) {
+            console.error(
+                "Erreur ajout contrôle :",
+                error
+            );
+
+            res.status(500).json({
+                error: "Impossible d'ajouter le contrôle."
+            });
+        }
+    }
+);
+
+app.put(
+    "/api/controls/:id",
+    requireAuth,
+    async (req, res) => {
+        try {
+            const id =
+                req.params.id;
+
+            if (!ObjectId.isValid(id)) {
+                return res.status(400).json({
+                    error: "ID invalide."
+                });
+            }
+
+            const control =
+                await controlsCollection.findOne({
+                    _id: new ObjectId(id),
+                    userId: new ObjectId(req.userId)
+                });
+
+            if (!control) {
+                return res.status(404).json({
+                    error: "Contrôle introuvable."
+                });
+            }
+
+            const update = {};
+
+            if (
+                req.body.progress !== undefined
+            ) {
+                let progress =
+                    Number(req.body.progress);
+
+                if (!Number.isFinite(progress)) {
+                    progress = 0;
+                }
+
+                progress =
+                    Math.max(
+                        0,
+                        Math.min(100, progress)
+                    );
+
+                update.progress = progress;
+            }
+
+            if (req.body.subject !== undefined) {
+                update.subject =
+                    String(req.body.subject).trim();
+            }
+
+            if (req.body.chapter !== undefined) {
+                update.chapter =
+                    String(req.body.chapter).trim();
+            }
+
+            if (req.body.date !== undefined) {
+                update.date =
+                    String(req.body.date);
+            }
+
+            await controlsCollection.updateOne(
+                {
+                    _id: new ObjectId(id),
+                    userId: new ObjectId(req.userId)
+                },
+                {
+                    $set: update
+                }
+            );
+
+            const updated =
+                await controlsCollection.findOne({
+                    _id: new ObjectId(id)
+                });
+
+            res.json({
+                control: updated
+            });
+        } catch (error) {
+            console.error(
+                "Erreur modification contrôle :",
+                error
+            );
+
+            res.status(500).json({
+                error: "Impossible de modifier le contrôle."
+            });
+        }
+    }
+);
+
+app.delete(
+    "/api/controls/:id",
+    requireAuth,
+    async (req, res) => {
+        try {
+            const id =
+                req.params.id;
+
+            if (!ObjectId.isValid(id)) {
+                return res.status(400).json({
+                    error: "ID invalide."
+                });
+            }
+
+            const result =
+                await controlsCollection.deleteOne({
+                    _id: new ObjectId(id),
+                    userId: new ObjectId(req.userId)
+                });
+
+            if (result.deletedCount === 0) {
+                return res.status(404).json({
+                    error: "Contrôle introuvable."
+                });
+            }
+
+            res.json({
+                message: "Contrôle supprimé."
+            });
+        } catch (error) {
+            console.error(
+                "Erreur suppression contrôle :",
+                error
+            );
+
+            res.status(500).json({
+                error: "Impossible de supprimer le contrôle."
+            });
+        }
+    }
+);
+
+/* =========================================================
+   STATISTIQUES
+========================================================= */
+
+app.get(
+    "/api/stats",
+    requireAuth,
+    async (req, res) => {
+        try {
+            const user =
+                await usersCollection.findOne({
+                    _id: new ObjectId(req.userId)
+                });
+
+            res.json({
+                streak: user?.streak || 0,
+                bestStreak:
+                    user?.bestStreak || 0
+            });
+        } catch (error) {
+            console.error(
+                "Erreur stats :",
+                error
+            );
+
+            res.status(500).json({
+                error: "Impossible de charger les statistiques."
+            });
+        }
+    }
+);
+
+app.put(
+    "/api/stats",
+    requireAuth,
+    async (req, res) => {
+        try {
+            let streak =
+                Number(req.body.streak) || 0;
+
+            let bestStreak =
+                Number(req.body.bestStreak) || 0;
+
+            streak =
+                Math.max(0, streak);
+
+            bestStreak =
+                Math.max(0, bestStreak);
+
+            await usersCollection.updateOne(
+                {
+                    _id: new ObjectId(req.userId)
+                },
+                {
+                    $set: {
+                        streak,
+                        bestStreak
+                    }
+                }
+            );
+
+            res.json({
+                streak,
+                bestStreak
+            });
+        } catch (error) {
+            console.error(
+                "Erreur sauvegarde stats :",
+                error
+            );
+
+            res.status(500).json({
+                error: "Impossible de sauvegarder les statistiques."
+            });
+        }
+    }
+);
+
+/* =========================================================
+   HISTORIQUE DES FICHES
+========================================================= */
+
+app.get(
+    "/api/history",
+    requireAuth,
+    async (req, res) => {
+        try {
+            const history =
+                await historyCollection
+                    .find({
+                        userId: new ObjectId(req.userId)
+                    })
+                    .sort({
+                        createdAt: -1
+                    })
+                    .toArray();
+
+            res.json(history);
+        } catch (error) {
+            console.error(
+                "Erreur historique :",
+                error
+            );
+
+            res.status(500).json({
+                error: "Impossible de charger l'historique."
+            });
+        }
+    }
+);
 
 app.post(
     "/api/history",
+    requireAuth,
     async (req, res) => {
-
         try {
+            const {
+                course,
+                result
+            } = req.body;
 
-            const user =
-                await getCurrentUser(req);
-
-            if (!user) {
-
-                return res.status(401).json({
-                    error:
-                        "Utilisateur non connecté."
-                });
-
-            }
-
-            const course =
-                typeof req.body.course === "string"
-                    ? req.body.course.trim()
-                    : "";
-
-            const result =
-                req.body.result;
-
-            if (
-                !course ||
-                result === undefined ||
-                result === null
-            ) {
-
+            if (!course || !result) {
                 return res.status(400).json({
-                    error:
-                        "Données invalides."
+                    error: "Données de fiche manquantes."
                 });
-
             }
-
-            const now =
-                new Date();
 
             const historyItem = {
-
-                userId:
-                    user._id,
-
-                course,
-
+                userId: new ObjectId(req.userId),
+                course: String(course).trim(),
                 result,
-
-                date:
-                    now.toLocaleString(
-                        "fr-FR"
-                    ),
-
-                createdAt:
-                    now
-
+                createdAt: new Date()
             };
 
-            const inserted =
-                await db
-                    .collection("history")
-                    .insertOne(
-                        historyItem
-                    );
+            const insertResult =
+                await historyCollection.insertOne(
+                    historyItem
+                );
 
-            return res.json({
+            historyItem._id =
+                insertResult.insertedId;
 
-                success:
-                    true,
-
-                history: {
-
-                    _id:
-                        inserted.insertedId,
-
-                    ...historyItem
-
-                }
-
+            res.status(201).json({
+                history: historyItem
             });
-
         } catch (error) {
-
             console.error(
-                "❌ Erreur ajout historique :",
+                "Erreur sauvegarde historique :",
                 error
             );
 
-            return res.status(500).json({
-                error:
-                    "Erreur serveur."
+            res.status(500).json({
+                error: "Impossible de sauvegarder la fiche."
             });
-
         }
-
     }
 );
 
-
-/* ================================================= */
-/*                 RENOMMER UNE FICHE                */
-/* ================================================= */
-
 app.put(
     "/api/history/:id",
+    requireAuth,
     async (req, res) => {
-
         try {
+            const id =
+                req.params.id;
 
-            const user =
-                await getCurrentUser(req);
-
-            if (!user) {
-
-                return res.status(401).json({
-                    error:
-                        "Utilisateur non connecté."
-                });
-
-            }
-
-            if (
-                !ObjectId.isValid(
-                    req.params.id
-                )
-            ) {
-
+            if (!ObjectId.isValid(id)) {
                 return res.status(400).json({
-                    error:
-                        "Identifiant invalide."
+                    error: "ID invalide."
                 });
-
             }
 
-            const course =
-                typeof req.body.course === "string"
-                    ? req.body.course.trim()
-                    : "";
+            const newCourse =
+                String(
+                    req.body.course || ""
+                ).trim();
 
-            if (!course) {
-
+            if (!newCourse) {
                 return res.status(400).json({
-                    error:
-                        "Nom de fiche invalide."
+                    error: "Le nom de la fiche est vide."
                 });
-
             }
-
-            const historyCollection =
-                db.collection("history");
-
-            const historyId =
-                new ObjectId(
-                    req.params.id
-                );
 
             const result =
                 await historyCollection.updateOne(
                     {
-                        _id:
-                            historyId,
-
-                        userId:
-                            user._id
+                        _id: new ObjectId(id),
+                        userId: new ObjectId(req.userId)
                     },
                     {
                         $set: {
-                            course
+                            course: newCourse
                         }
                     }
                 );
 
-            if (
-                result.matchedCount === 0
-            ) {
-
+            if (result.matchedCount === 0) {
                 return res.status(404).json({
-                    error:
-                        "Fiche introuvable."
+                    error: "Fiche introuvable."
                 });
-
             }
 
-            /*
-             * CORRECTION :
-             * On récupère la fiche complète après
-             * la modification et on la renvoie au client.
-             */
-
-            const updatedHistory =
+            const history =
                 await historyCollection.findOne({
-                    _id:
-                        historyId,
-
-                    userId:
-                        user._id
+                    _id: new ObjectId(id)
                 });
 
-            if (!updatedHistory) {
-
-                return res.status(404).json({
-                    error:
-                        "Fiche introuvable après modification."
-                });
-
-            }
-
-            return res.json({
-
-                success:
-                    true,
-
-                history:
-                    updatedHistory
-
+            res.json({
+                history
             });
-
         } catch (error) {
-
             console.error(
-                "❌ Erreur renommage fiche :",
+                "Erreur renommage fiche :",
                 error
             );
 
-            return res.status(500).json({
-                error:
-                    "Erreur serveur."
+            res.status(500).json({
+                error: "Impossible de renommer la fiche."
             });
-
         }
-
     }
 );
-
-
-/* ================================================= */
-/*                 SUPPRIMER UNE FICHE               */
-/* ================================================= */
 
 app.delete(
     "/api/history/:id",
+    requireAuth,
     async (req, res) => {
-
         try {
+            const id =
+                req.params.id;
 
-            const user =
-                await getCurrentUser(req);
-
-            if (!user) {
-
-                return res.status(401).json({
-                    error:
-                        "Utilisateur non connecté."
-                });
-
-            }
-
-            if (
-                !ObjectId.isValid(
-                    req.params.id
-                )
-            ) {
-
+            if (!ObjectId.isValid(id)) {
                 return res.status(400).json({
-                    error:
-                        "Identifiant invalide."
+                    error: "ID invalide."
                 });
-
             }
 
             const result =
-                await db
-                    .collection("history")
-                    .deleteOne({
+                await historyCollection.deleteOne({
+                    _id: new ObjectId(id),
+                    userId: new ObjectId(req.userId)
+                });
 
-                        _id:
-                            new ObjectId(
-                                req.params.id
-                            ),
-
-                        userId:
-                            user._id
-
-                    });
-
-            if (
-                result.deletedCount === 0
-            ) {
-
+            if (result.deletedCount === 0) {
                 return res.status(404).json({
-                    error:
-                        "Fiche introuvable."
+                    error: "Fiche introuvable."
                 });
-
             }
 
-            return res.json({
-                success: true
+            res.json({
+                message: "Fiche supprimée."
             });
-
         } catch (error) {
-
             console.error(
-                "❌ Erreur suppression fiche :",
+                "Erreur suppression fiche :",
                 error
             );
 
-            return res.status(500).json({
-                error:
-                    "Erreur serveur."
+            res.status(500).json({
+                error: "Impossible de supprimer la fiche."
             });
-
         }
-
     }
 );
 
-
-/* ================================================= */
-/*                     CONTRÔLES                     */
-/* ================================================= */
-
-app.get(
-    "/api/controls",
-    async (req, res) => {
-
-        try {
-
-            const user =
-                await getCurrentUser(req);
-
-            if (!user) {
-
-                return res.status(401).json({
-                    error:
-                        "Utilisateur non connecté."
-                });
-
-            }
-
-            const controls =
-                await db
-                    .collection("controls")
-                    .find({
-                        userId:
-                            user._id
-                    })
-                    .sort({
-                        date:
-                            1
-                    })
-                    .toArray();
-
-            return res.json(
-                controls
-            );
-
-        } catch (error) {
-
-            console.error(
-                "❌ Erreur récupération contrôles :",
-                error
-            );
-
-            return res.status(500).json({
-                error:
-                    "Erreur serveur."
-            });
-
-        }
-
-    }
-);
-
-
-app.post(
-    "/api/controls",
-    async (req, res) => {
-
-        try {
-
-            const user =
-                await getCurrentUser(req);
-
-            if (!user) {
-
-                return res.status(401).json({
-                    error:
-                        "Utilisateur non connecté."
-                });
-
-            }
-
-            const subject =
-                typeof req.body.subject === "string"
-                    ? req.body.subject.trim()
-                    : "";
-
-            const chapter =
-                typeof req.body.chapter === "string"
-                    ? req.body.chapter.trim()
-                    : "";
-
-            const date =
-                typeof req.body.date === "string"
-                    ? req.body.date.trim()
-                    : "";
-
-            if (
-                !subject ||
-                !chapter ||
-                !date
-            ) {
-
-                return res.status(400).json({
-                    error:
-                        "Tous les champs sont obligatoires."
-                });
-
-            }
-
-            const control = {
-
-                userId:
-                    user._id,
-
-                subject,
-
-                chapter,
-
-                date,
-
-                progress:
-                    0,
-
-                revisionTime:
-                    900,
-
-                createdAt:
-                    new Date()
-
-            };
-
-            const result =
-                await db
-                    .collection("controls")
-                    .insertOne(
-                        control
-                    );
-
-            return res.json({
-
-                success:
-                    true,
-
-                control: {
-
-                    _id:
-                        result.insertedId,
-
-                    ...control
-
-                }
-
-            });
-
-        } catch (error) {
-
-            console.error(
-                "❌ Erreur ajout contrôle :",
-                error
-            );
-
-            return res.status(500).json({
-                error:
-                    "Erreur serveur."
-            });
-
-        }
-
-    }
-);
-
-
-/* ================================================= */
-/*              MODIFIER PROGRESSION                 */
-/* ================================================= */
-
-app.put(
-    "/api/controls/:id",
-    async (req, res) => {
-
-        try {
-
-            const user =
-                await getCurrentUser(req);
-
-            if (!user) {
-
-                return res.status(401).json({
-                    error:
-                        "Utilisateur non connecté."
-                });
-
-            }
-
-            if (
-                !ObjectId.isValid(
-                    req.params.id
-                )
-            ) {
-
-                return res.status(400).json({
-                    error:
-                        "Identifiant invalide."
-                });
-
-            }
-
-            const progress =
-                Number(
-                    req.body.progress
-                );
-
-            if (
-                !Number.isFinite(
-                    progress
-                )
-            ) {
-
-                return res.status(400).json({
-                    error:
-                        "Progression invalide."
-                });
-
-            }
-
-            const safeProgress =
-                Math.min(
-                    100,
-                    Math.max(
-                        0,
-                        progress
-                    )
-                );
-
-            const result =
-                await db
-                    .collection("controls")
-                    .updateOne(
-                        {
-                            _id:
-                                new ObjectId(
-                                    req.params.id
-                                ),
-
-                            userId:
-                                user._id
-                        },
-                        {
-                            $set: {
-                                progress:
-                                    safeProgress
-                            }
-                        }
-                    );
-
-            if (
-                result.matchedCount === 0
-            ) {
-
-                return res.status(404).json({
-                    error:
-                        "Contrôle introuvable."
-                });
-
-            }
-
-            return res.json({
-                success: true,
-                progress: safeProgress
-            });
-
-        } catch (error) {
-
-            console.error(
-                "❌ Erreur modification progression :",
-                error
-            );
-
-            return res.status(500).json({
-                error:
-                    "Erreur serveur."
-            });
-
-        }
-
-    }
-);
-
-
-/* ================================================= */
-/*                SUPPRIMER CONTRÔLE                */
-/* ================================================= */
-
-app.delete(
-    "/api/controls/:id",
-    async (req, res) => {
-
-        try {
-
-            const user =
-                await getCurrentUser(req);
-
-            if (!user) {
-
-                return res.status(401).json({
-                    error:
-                        "Utilisateur non connecté."
-                });
-
-            }
-
-            if (
-                !ObjectId.isValid(
-                    req.params.id
-                )
-            ) {
-
-                return res.status(400).json({
-                    error:
-                        "Identifiant invalide."
-                });
-
-            }
-
-            const result =
-                await db
-                    .collection("controls")
-                    .deleteOne({
-
-                        _id:
-                            new ObjectId(
-                                req.params.id
-                            ),
-
-                        userId:
-                            user._id
-
-                    });
-
-            if (
-                result.deletedCount === 0
-            ) {
-
-                return res.status(404).json({
-                    error:
-                        "Contrôle introuvable."
-                });
-
-            }
-
-            return res.json({
-                success: true
-            });
-
-        } catch (error) {
-
-            console.error(
-                "❌ Erreur suppression contrôle :",
-                error
-            );
-
-            return res.status(500).json({
-                error:
-                    "Erreur serveur."
-            });
-
-        }
-
-    }
-);
-
-
-/* ================================================= */
-/*                       IA                          */
-/* ================================================= */
+/* =========================================================
+   GÉNÉRATION IA
+========================================================= */
 
 app.post(
     "/generate",
+    requireAuth,
     async (req, res) => {
-
         try {
+            const {
+                course
+            } = req.body;
+
+            if (!course || !String(course).trim()) {
+                return res.status(400).json({
+                    error: "Aucun cours fourni."
+                });
+            }
+
+            if (String(course).length > 10000) {
+                return res.status(400).json({
+                    error: "Le cours dépasse 10 000 caractères."
+                });
+            }
 
             if (!openai) {
-
-                return res.status(503).json({
-                    error:
-                        "L'IA n'est pas configurée sur le serveur."
+                return res.status(500).json({
+                    error: "La clé API OpenAI n'est pas configurée."
                 });
-
             }
-
-            const course =
-                typeof req.body.course === "string"
-                    ? req.body.course.trim()
-                    : "";
-
-            if (!course) {
-
-                return res.status(400).json({
-                    error:
-                        "Cours manquant."
-                });
-
-            }
-
-            if (
-                course.length > 10000
-            ) {
-
-                return res.status(400).json({
-                    error:
-                        "Cours trop long."
-                });
-
-            }
-
-            console.log(
-                "🤖 Génération IA demandée."
-            );
-
 
             const response =
-                await openai.chat.completions.create({
-
+                await openai.responses.create({
                     model:
+                        process.env.OPENAI_MODEL ||
                         "gpt-4.1-mini",
 
-                    response_format: {
-                        type:
-                            "json_object"
-                    },
-
-                    messages: [
-
+                    input: [
                         {
-                            role:
-                                "system",
-
-                            content: `
-Tu es un professeur qui aide un lycéen à réviser.
-
-Analyse le cours fourni.
-
-Réponds uniquement avec un objet JSON valide.
-
-Format obligatoire :
-
-{
-  "summary": "résumé clair du cours",
-  "keyPoints": [
-    "point important 1",
-    "point important 2"
-  ],
-  "quiz": [
-    {
-      "question": "question",
-      "answer": "réponse"
-    }
-  ]
-}
-
-Le résumé doit être compréhensible.
-Les points clés doivent être utiles pour réviser.
-Crée plusieurs questions de quiz.
-`
-                        },
-
-                        {
-                            role:
-                                "user",
-
+                            role: "system",
                             content:
-                                course
+                                "Tu es un assistant scolaire français. " +
+                                "Transforme le cours fourni en fiche de révision claire, " +
+                                "courte et adaptée à un lycéen. " +
+                                "Retourne UNIQUEMENT un JSON valide avec exactement " +
+                                "les propriétés summary, keyPoints et quiz. " +
+                                "summary doit être une chaîne. " +
+                                "keyPoints doit être un tableau de chaînes. " +
+                                "quiz doit être un tableau d'objets contenant question et answer."
+                        },
+                        {
+                            role: "user",
+                            content:
+                                String(course)
                         }
-
                     ]
-
                 });
 
+            let text =
+                response.output_text;
 
-            const content =
-                response
-                    ?.choices?.[0]
-                    ?.message?.content;
-
-
-            if (!content) {
-
+            if (!text) {
                 throw new Error(
-                    "L'IA n'a retourné aucune réponse."
+                    "Aucune réponse de l'IA."
                 );
-
             }
 
+            text = text.trim();
 
-            let parsed;
+            if (
+                text.startsWith("```json")
+            ) {
+                text =
+                    text
+                        .replace(/^```json/, "")
+                        .replace(/```$/, "")
+                        .trim();
+            }
+
+            if (
+                text.startsWith("```")
+            ) {
+                text =
+                    text
+                        .replace(/^```/, "")
+                        .replace(/```$/, "")
+                        .trim();
+            }
+
+            let result;
 
             try {
-
-                parsed =
-                    JSON.parse(
-                        content
-                    );
-
+                result =
+                    JSON.parse(text);
             } catch {
+                console.error(
+                    "Réponse IA non JSON :",
+                    text
+                );
 
-                const cleaned =
-                    content
-                        .replace(
-                            /^```json\s*/i,
-                            ""
-                        )
-                        .replace(
-                            /^```\s*/i,
-                            ""
-                        )
-                        .replace(
-                            /\s*```$/i,
-                            ""
-                        )
-                        .trim();
-
-                parsed =
-                    JSON.parse(
-                        cleaned
-                    );
-
+                return res.status(500).json({
+                    error:
+                        "La réponse de l'IA n'est pas valide."
+                });
             }
 
-
             if (
-                !parsed.summary
+                typeof result.summary !== "string"
             ) {
-
-                parsed.summary = "";
-
+                result.summary = "";
             }
 
             if (
                 !Array.isArray(
-                    parsed.keyPoints
+                    result.keyPoints
                 )
             ) {
-
-                parsed.keyPoints = [];
-
+                result.keyPoints = [];
             }
 
             if (
                 !Array.isArray(
-                    parsed.quiz
+                    result.quiz
                 )
             ) {
-
-                parsed.quiz = [];
-
+                result.quiz = [];
             }
 
-            return res.json(
-                parsed
-            );
-
+            res.json(result);
         } catch (error) {
-
             console.error(
-                "❌ Erreur génération IA :",
+                "Erreur génération IA :",
                 error
             );
 
-            return res.status(500).json({
-
+            res.status(500).json({
                 error:
-                    error?.message ||
-                    "Erreur lors de la génération IA."
-
+                    error.message ||
+                    "Erreur lors de la génération de la fiche."
             });
-
         }
-
     }
 );
 
+/* =========================================================
+   PARTAGE DE FICHES
+========================================================= */
 
-/* ================================================= */
-/*                     PARTAGE                       */
-/* ================================================= */
-
-/*
-    IMPORTANT :
-
-    Les fiches partagées sont enregistrées
-    dans MongoDB.
-
-    Elles ne dépendent PAS du localStorage.
-*/
-
+function generateShareCode() {
+    return crypto
+        .randomBytes(4)
+        .toString("hex")
+        .toUpperCase();
+}
 
 app.post(
     "/share",
+    requireAuth,
     async (req, res) => {
-
         try {
-
-            const user =
-                await getCurrentUser(req);
-
-            if (!user) {
-
-                return res.status(401).json({
-                    error:
-                        "Utilisateur non connecté."
-                });
-
-            }
-
-            /*
-             * CORRECTION :
-             * Le client envoie maintenant historyId.
-             */
-
-            const historyId =
-                typeof req.body.historyId === "string"
-                    ? req.body.historyId.trim()
-                    : "";
+            const {
+                historyId
+            } = req.body;
 
             if (
                 !historyId ||
                 !ObjectId.isValid(historyId)
             ) {
-
                 return res.status(400).json({
-                    error:
-                        "Identifiant de fiche invalide."
+                    error: "Fiche invalide."
                 });
-
             }
-
-            /*
-             * On récupère la fiche directement
-             * dans l'historique de l'utilisateur.
-             */
 
             const historyItem =
-                await db
-                    .collection("history")
-                    .findOne({
-                        _id:
-                            new ObjectId(
-                                historyId
-                            ),
-
-                        userId:
-                            user._id
-                    });
+                await historyCollection.findOne({
+                    _id: new ObjectId(historyId),
+                    userId: new ObjectId(req.userId)
+                });
 
             if (!historyItem) {
-
                 return res.status(404).json({
-                    error:
-                        "Fiche introuvable."
+                    error: "Fiche introuvable."
                 });
-
             }
-
-            const course =
-                typeof historyItem.course === "string"
-                    ? historyItem.course.trim()
-                    : "";
-
-            const result =
-                historyItem.result;
-
-            if (
-                !course ||
-                result === undefined ||
-                result === null
-            ) {
-
-                return res.status(400).json({
-                    error:
-                        "Données de partage invalides."
-                });
-
-            }
-
-            /*
-             * Génération d'un code unique.
-             */
 
             let code;
             let exists = true;
 
             while (exists) {
-
                 code =
-                    crypto
-                        .randomBytes(4)
-                        .toString("hex")
-                        .toUpperCase();
-
-                const existing =
-                    await db
-                        .collection(
-                            "sharedSheets"
-                        )
-                        .findOne({
-                            code
-                        });
+                    generateShareCode();
 
                 exists =
-                    !!existing;
-
+                    !!(await sharesCollection.findOne({
+                        code
+                    }));
             }
 
-            /*
-             * Enregistrement MongoDB.
-             */
-
-            await db
-                .collection(
-                    "sharedSheets"
-                )
-                .insertOne({
-
-                    code,
-
-                    ownerId:
-                        user._id,
-
-                    historyId:
-                        historyItem._id,
-
-                    course,
-
-                    result,
-
-                    createdAt:
-                        new Date()
-
-                });
-
-            return res.json({
-
-                success:
-                    true,
-
-                code
-
+            await sharesCollection.insertOne({
+                code,
+                course: historyItem.course,
+                result: historyItem.result,
+                userId: new ObjectId(req.userId),
+                createdAt: new Date()
             });
 
+            res.json({
+                code
+            });
         } catch (error) {
-
             console.error(
-                "❌ Erreur partage :",
+                "Erreur partage :",
                 error
             );
 
-            return res.status(500).json({
-
-                error:
-                    "Erreur lors du partage."
-
+            res.status(500).json({
+                error: "Impossible de partager la fiche."
             });
-
         }
-
     }
 );
-
-
-/* ================================================= */
-/*              RÉCUPÉRER PARTAGE                   */
-/* ================================================= */
 
 app.get(
     "/share/:code",
+    requireAuth,
     async (req, res) => {
-
         try {
-
             const code =
-                typeof req.params.code === "string"
-                    ? req.params.code
-                        .trim()
-                        .toUpperCase()
-                    : "";
+                String(
+                    req.params.code || ""
+                )
+                    .trim()
+                    .toUpperCase();
 
             if (!code) {
-
                 return res.status(400).json({
-                    error:
-                        "Code de partage invalide."
+                    error: "Code invalide."
                 });
-
             }
 
-            const sheet =
-                await db
-                    .collection(
-                        "sharedSheets"
-                    )
-                    .findOne({
-                        code
-                    });
+            const share =
+                await sharesCollection.findOne({
+                    code
+                });
 
-            if (!sheet) {
-
+            if (!share) {
                 return res.status(404).json({
-                    error:
-                        "Fiche introuvable."
+                    error: "Code de partage invalide ou expiré."
                 });
-
             }
 
-            return res.json({
-
-                success:
-                    true,
-
-                course:
-                    sheet.course,
-
-                result:
-                    sheet.result,
-
-                code:
-                    sheet.code
-
+            res.json({
+                course: share.course,
+                result: share.result
             });
-
         } catch (error) {
-
             console.error(
-                "❌ Erreur récupération partage :",
+                "Erreur import partage :",
                 error
             );
 
-            return res.status(500).json({
-                error:
-                    "Erreur serveur."
+            res.status(500).json({
+                error: "Impossible de récupérer la fiche."
             });
-
         }
-
     }
 );
 
+/* =========================================================
+   MODIFICATION DU PSEUDO
+========================================================= */
 
-/* ================================================= */
-/*          IMPORTER UNE FICHE PARTAGÉE              */
-/* ================================================= */
-
-app.post(
-    "/api/history/import",
+app.put(
+    "/api/profile/username",
+    requireAuth,
     async (req, res) => {
-
         try {
+            const username =
+                String(
+                    req.body.username || ""
+                ).trim();
+
+            if (username.length < 2) {
+                return res.status(400).json({
+                    error:
+                        "Le pseudo doit contenir au moins 2 caractères."
+                });
+            }
+
+            await usersCollection.updateOne(
+                {
+                    _id: new ObjectId(req.userId)
+                },
+                {
+                    $set: {
+                        username
+                    }
+                }
+            );
 
             const user =
-                await getCurrentUser(req);
-
-            if (!user) {
-
-                return res.status(401).json({
-                    error:
-                        "Utilisateur non connecté."
+                await usersCollection.findOne({
+                    _id: new ObjectId(req.userId)
                 });
 
-            }
-
-            const code =
-                typeof req.body.code === "string"
-                    ? req.body.code
-                        .trim()
-                        .toUpperCase()
-                    : "";
-
-            if (!code) {
-
-                return res.status(400).json({
-                    error:
-                        "Code invalide."
-                });
-
-            }
-
-            const sheet =
-                await db
-                    .collection(
-                        "sharedSheets"
-                    )
-                    .findOne({
-                        code
-                    });
-
-            if (!sheet) {
-
-                return res.status(404).json({
-                    error:
-                        "Code invalide."
-                });
-
-            }
-
-            const now =
-                new Date();
-
-            const historyItem = {
-
-                userId:
-                    user._id,
-
-                course:
-                    sheet.course,
-
-                result:
-                    sheet.result,
-
-                date:
-                    now.toLocaleString(
-                        "fr-FR"
-                    ),
-
-                createdAt:
-                    now
-
-            };
-
-            const inserted =
-                await db
-                    .collection("history")
-                    .insertOne(
-                        historyItem
-                    );
-
-            return res.json({
-
-                success:
-                    true,
-
-                history: {
-
-                    _id:
-                        inserted.insertedId,
-
-                    ...historyItem
-
+            res.json({
+                user: {
+                    _id: user._id,
+                    username: user.username,
+                    email: user.email
                 }
-
             });
-
         } catch (error) {
-
             console.error(
-                "❌ Erreur import fiche :",
+                "Erreur modification pseudo :",
                 error
             );
 
-            return res.status(500).json({
+            res.status(500).json({
                 error:
-                    "Erreur serveur."
+                    "Impossible de modifier le pseudo."
             });
-
         }
-
     }
 );
 
+/* =========================================================
+   MODIFICATION MOT DE PASSE
+========================================================= */
 
-/* ================================================= */
-/*             NETTOYAGE DES SESSIONS               */
-/* ================================================= */
+app.put(
+    "/api/profile/password",
+    requireAuth,
+    async (req, res) => {
+        try {
+            const {
+                password
+            } = req.body;
 
-async function cleanupExpiredSessions() {
-
-    try {
-
-        if (!db) {
-            return;
-        }
-
-        const result =
-            await db
-                .collection("sessions")
-                .deleteMany({
-                    expiresAt: {
-                        $lte:
-                            new Date()
-                    }
+            if (!password || password.length < 6) {
+                return res.status(400).json({
+                    error:
+                        "Le mot de passe doit contenir au moins 6 caractères."
                 });
+            }
 
-        if (
-            result.deletedCount > 0
-        ) {
-
-            console.log(
-                `🧹 ${result.deletedCount} session(s) expirée(s) supprimée(s).`
+            await usersCollection.updateOne(
+                {
+                    _id: new ObjectId(req.userId)
+                },
+                {
+                    $set: {
+                        password:
+                            hashPassword(password)
+                    }
+                }
             );
 
+            res.json({
+                message:
+                    "Mot de passe modifié."
+            });
+        } catch (error) {
+            console.error(
+                "Erreur modification mot de passe :",
+                error
+            );
+
+            res.status(500).json({
+                error:
+                    "Impossible de modifier le mot de passe."
+            });
         }
-
-    } catch (error) {
-
-        console.error(
-            "Erreur nettoyage sessions :",
-            error
-        );
-
     }
+);
 
-}
+/* =========================================================
+   SUPPRESSION DU COMPTE
+========================================================= */
 
+app.delete(
+    "/api/account",
+    requireAuth,
+    async (req, res) => {
+        try {
+            const userId =
+                new ObjectId(req.userId);
 
-/* ================================================= */
-/*                 ERREUR GLOBALE                    */
-/* ================================================= */
+            await controlsCollection.deleteMany({
+                userId
+            });
+
+            await historyCollection.deleteMany({
+                userId
+            });
+
+            await sharesCollection.deleteMany({
+                userId
+            });
+
+            await usersCollection.deleteOne({
+                _id: userId
+            });
+
+            const token =
+                req.headers.cookie
+                    ?.split(";")
+                    .map(cookie => cookie.trim())
+                    .find(cookie =>
+                        cookie.startsWith(
+                            "session="
+                        )
+                    )
+                    ?.split("=")[1];
+
+            if (token) {
+                sessions.delete(token);
+            }
+
+            clearSessionCookie(res);
+
+            res.json({
+                message:
+                    "Compte supprimé."
+            });
+        } catch (error) {
+            console.error(
+                "Erreur suppression compte :",
+                error
+            );
+
+            res.status(500).json({
+                error:
+                    "Impossible de supprimer le compte."
+            });
+        }
+    }
+);
+
+/* =========================================================
+   404 API
+========================================================= */
 
 app.use(
-    (error, req, res, next) => {
-
-        console.error(
-            "❌ Erreur Express :",
-            error
-        );
-
-        if (
-            res.headersSent
-        ) {
-
-            return next(error);
-
-        }
-
-        return res.status(500).json({
-            error:
-                "Erreur serveur."
+    "/api",
+    (req, res) => {
+        res.status(404).json({
+            error: "Route API introuvable."
         });
-
     }
 );
 
-
-/* ================================================= */
-/*                 DÉMARRAGE SERVEUR                 */
-/* ================================================= */
+/* =========================================================
+   DÉMARRAGE
+========================================================= */
 
 async function startServer() {
-
     try {
-
-        console.log(
-            "🔄 Connexion à MongoDB..."
-        );
-
-        await client.connect();
-
-        db =
-            client.db(
-                "capcontrole"
-            );
-
-        console.log(
-            "✅ MongoDB connecté."
-        );
-
-
-        /* ================================================= */
-        /*                       INDEX                       */
-        /* ================================================= */
-
-        await db
-            .collection("users")
-            .createIndex(
-                {
-                    email: 1
-                },
-                {
-                    unique: true
-                }
-            );
-
-        await db
-            .collection("users")
-            .createIndex(
-                {
-                    usernameLower: 1
-                },
-                {
-                    unique: true
-                }
-            );
-
-        await db
-            .collection("sessions")
-            .createIndex(
-                {
-                    tokenHash: 1
-                },
-                {
-                    unique: true
-                }
-            );
-
-        await db
-            .collection("sessions")
-            .createIndex(
-                {
-                    expiresAt: 1
-                },
-                {
-                    expireAfterSeconds: 0
-                }
-            );
-
-        await db
-            .collection("sharedSheets")
-            .createIndex(
-                {
-                    code: 1
-                },
-                {
-                    unique: true
-                }
-            );
-
-        await db
-            .collection("history")
-            .createIndex({
-                userId: 1,
-                createdAt: -1
-            });
-
-        await db
-            .collection("controls")
-            .createIndex({
-                userId: 1,
-                date: 1
-            });
-
-
-        console.log(
-            "✅ Index MongoDB vérifiés."
-        );
-
-
-        /* Nettoyage immédiat */
-
-        await cleanupExpiredSessions();
-
-
-        /* Nettoyage toutes les heures */
-
-        setInterval(
-            cleanupExpiredSessions,
-            60 * 60 * 1000
-        );
-
-
-        /* ================================================= */
-        /*                       LISTEN                       */
-        /* ================================================= */
+        await connectMongoDB();
 
         app.listen(
             PORT,
-            "0.0.0.0",
             () => {
-
                 console.log(
                     `🚀 Cap Contrôle lancé sur le port ${PORT}`
                 );
-
             }
         );
-
     } catch (error) {
-
         console.error(
             "❌ Impossible de démarrer le serveur :",
             error
         );
 
         process.exit(1);
-
     }
-
 }
-
 
 startServer();
-
-
-/* ================================================= */
-/*                 ARRÊT PROPRE                      */
-/* ================================================= */
-
-async function shutdown() {
-
-    console.log(
-        "🛑 Arrêt du serveur..."
-    );
-
-    try {
-
-        await client.close();
-
-        console.log(
-            "MongoDB déconnecté."
-        );
-
-        process.exit(0);
-
-    } catch (error) {
-
-        console.error(
-            "Erreur fermeture :",
-            error
-        );
-
-        process.exit(1);
-
-    }
-
-}
-
-process.on(
-    "SIGINT",
-    shutdown
-);
-
-process.on(
-    "SIGTERM",
-    shutdown
-);
