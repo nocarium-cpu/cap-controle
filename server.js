@@ -866,6 +866,381 @@ async function getCurrentUser(req) {
 }
 
 /* ================================================= */
+/*          SYNCHRONISATION DU COMPTE                */
+/* ================================================= */
+
+
+/* ========================= */
+/* Récupérer série + record  */
+/* ========================= */
+
+app.get(
+    "/api/stats",
+    async (req, res) => {
+
+        try {
+
+            const user =
+                await getCurrentUser(req);
+
+            if (!user) {
+
+                return res.status(401).json({
+                    error:
+                        "Utilisateur non connecté."
+                });
+
+            }
+
+            res.json({
+
+                streak:
+                    user.streak || 0,
+
+                bestStreak:
+                    user.bestStreak || 0
+
+            });
+
+        } catch (error) {
+
+            console.error(
+                "Erreur récupération statistiques :",
+                error
+            );
+
+            res.status(500).json({
+                error:
+                    "Erreur serveur."
+            });
+
+        }
+
+    }
+);
+
+
+/* ========================= */
+/* Sauvegarder série + record */
+/* ========================= */
+
+app.put(
+    "/api/stats",
+    async (req, res) => {
+
+        try {
+
+            const user =
+                await getCurrentUser(req);
+
+            if (!user) {
+
+                return res.status(401).json({
+                    error:
+                        "Utilisateur non connecté."
+                });
+
+            }
+
+            const streak =
+                Number(req.body.streak);
+
+            const bestStreak =
+                Number(req.body.bestStreak);
+
+            if (
+                !Number.isFinite(streak) ||
+                !Number.isFinite(bestStreak)
+            ) {
+
+                return res.status(400).json({
+                    error:
+                        "Statistiques invalides."
+                });
+
+            }
+
+            await db
+                .collection("users")
+                .updateOne(
+                    {
+                        _id: user._id
+                    },
+                    {
+                        $set: {
+                            streak,
+                            bestStreak
+                        }
+                    }
+                );
+
+            res.json({
+                success: true
+            });
+
+        } catch (error) {
+
+            console.error(
+                "Erreur sauvegarde statistiques :",
+                error
+            );
+
+            res.status(500).json({
+                error:
+                    "Erreur serveur."
+            });
+
+        }
+
+    }
+);
+
+
+/* ================================================= */
+/*                    HISTORIQUE                     */
+/* ================================================= */
+
+
+/* ========================= */
+/* Récupérer l'historique    */
+/* ========================= */
+
+app.get(
+    "/api/history",
+    async (req, res) => {
+
+        try {
+
+            const user =
+                await getCurrentUser(req);
+
+            if (!user) {
+
+                return res.status(401).json({
+                    error:
+                        "Utilisateur non connecté."
+                });
+
+            }
+
+            const history =
+                await db
+                    .collection("history")
+                    .find({
+                        userId:
+                            user._id
+                    })
+                    .sort({
+                        createdAt: -1
+                    })
+                    .toArray();
+
+            res.json(history);
+
+        } catch (error) {
+
+            console.error(
+                "Erreur récupération historique :",
+                error
+            );
+
+            res.status(500).json({
+                error:
+                    "Erreur serveur."
+            });
+
+        }
+
+    }
+);
+
+
+/* ========================= */
+/* Ajouter à l'historique    */
+/* ========================= */
+
+app.post(
+    "/api/history",
+    async (req, res) => {
+
+        try {
+
+            const user =
+                await getCurrentUser(req);
+
+            if (!user) {
+
+                return res.status(401).json({
+                    error:
+                        "Utilisateur non connecté."
+                });
+
+            }
+
+            const {
+                course,
+                result
+            } = req.body;
+
+            if (
+                typeof course !== "string" ||
+                !course.trim() ||
+                !result
+            ) {
+
+                return res.status(400).json({
+                    error:
+                        "Données invalides."
+                });
+
+            }
+
+            const historyItem = {
+
+                userId:
+                    user._id,
+
+                course:
+                    course.trim(),
+
+                result,
+
+                date:
+                    new Date().toLocaleString(
+                        "fr-FR"
+                    ),
+
+                createdAt:
+                    new Date()
+
+            };
+
+            const inserted =
+                await db
+                    .collection("history")
+                    .insertOne(
+                        historyItem
+                    );
+
+            res.json({
+
+                success: true,
+
+                history: {
+
+                    _id:
+                        inserted.insertedId,
+
+                    ...historyItem
+
+                }
+
+            });
+
+        } catch (error) {
+
+            console.error(
+                "Erreur ajout historique :",
+                error
+            );
+
+            res.status(500).json({
+                error:
+                    "Erreur serveur."
+            });
+
+        }
+
+    }
+);
+
+
+/* ========================= */
+/* Supprimer une fiche       */
+/* ========================= */
+
+app.delete(
+    "/api/history/:id",
+    async (req, res) => {
+
+        try {
+
+            const user =
+                await getCurrentUser(req);
+
+            if (!user) {
+
+                return res.status(401).json({
+                    error:
+                        "Utilisateur non connecté."
+                });
+
+            }
+
+            const { ObjectId } =
+                await import("mongodb");
+
+            if (
+                !ObjectId.isValid(
+                    req.params.id
+                )
+            ) {
+
+                return res.status(400).json({
+                    error:
+                        "Identifiant invalide."
+                });
+
+            }
+
+            const result =
+                await db
+                    .collection("history")
+                    .deleteOne({
+
+                        _id:
+                            new ObjectId(
+                                req.params.id
+                            ),
+
+                        userId:
+                            user._id
+
+                    });
+
+            if (
+                result.deletedCount === 0
+            ) {
+
+                return res.status(404).json({
+                    error:
+                        "Fiche introuvable."
+                });
+
+            }
+
+            res.json({
+                success: true
+            });
+
+        } catch (error) {
+
+            console.error(
+                "Erreur suppression historique :",
+                error
+            );
+
+            res.status(500).json({
+                error:
+                    "Erreur serveur."
+            });
+
+        }
+
+    }
+);
+
+/* ================================================= */
 /*             DONNÉES DU COMPTE                     */
 /* ================================================= */
 
