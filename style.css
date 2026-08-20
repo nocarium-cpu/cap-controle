@@ -514,10 +514,10 @@ select{
     color: #8a7d70;
 }
 
-.log-button{
+#log-button{
     margin: 5px;
 }
 
-.create{
+#create{
     margin: 5px;
 }
