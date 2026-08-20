@@ -1262,3 +1262,162 @@ window.addEventListener(
         }
     }
 );
+
+/* ================================================= */
+/*                   MENU PROFIL                     */
+/* ================================================= */
+
+const profileButton =
+    document.getElementById("profileButton");
+
+const profileDropdown =
+    document.getElementById("profileDropdown");
+
+const settingsButton =
+    document.getElementById("settingsButton");
+
+const logoutButton =
+    document.getElementById("logoutButton");
+
+
+/* Ouvrir / fermer le menu */
+
+profileButton?.addEventListener(
+    "click",
+    (event) => {
+
+        event.stopPropagation();
+
+        profileDropdown?.classList.toggle(
+            "open"
+        );
+
+    }
+);
+
+
+/* Empêcher le clic dans le menu de le fermer */
+
+profileDropdown?.addEventListener(
+    "click",
+    (event) => {
+
+        event.stopPropagation();
+
+    }
+);
+
+
+/* Fermer en cliquant ailleurs */
+
+document.addEventListener(
+    "click",
+    () => {
+
+        profileDropdown?.classList.remove(
+            "open"
+        );
+
+    }
+);
+
+
+/* Paramètres */
+
+settingsButton?.addEventListener(
+    "click",
+    () => {
+
+        profileDropdown?.classList.remove(
+            "open"
+        );
+
+        alert(
+            "Les paramètres seront bientôt disponibles."
+        );
+
+    }
+);
+
+
+/* Déconnexion */
+
+logoutButton?.addEventListener(
+    "click",
+    async () => {
+
+        try {
+
+            const response =
+                await fetch(
+                    "/logout",
+                    {
+                        method:"POST",
+                        credentials:"include"
+                    }
+                );
+
+            const data =
+                await response.json();
+
+            if (!response.ok) {
+
+                alert(
+                    data.error ||
+                    "Impossible de se déconnecter."
+                );
+
+                return;
+            }
+
+            profileDropdown?.classList.remove(
+                "open"
+            );
+
+            document
+                .getElementById("app")
+                .style.display = "none";
+
+            document
+                .getElementById("loginScreen")
+                .style.display = "block";
+
+            /* Nettoyage des champs de connexion */
+
+            const loginEmail =
+                document.getElementById(
+                    "loginEmail"
+                );
+
+            const loginPassword =
+                document.getElementById(
+                    "loginPassword"
+                );
+
+            if (loginEmail) {
+                loginEmail.value = "";
+            }
+
+            if (loginPassword) {
+                loginPassword.value = "";
+            }
+
+            /* On revient sur l'écran connexion */
+
+            showLogin();
+
+        } catch (error) {
+
+            console.error(
+                "Erreur déconnexion :",
+                error
+            );
+
+            alert(
+                "Impossible de contacter le serveur."
+            );
+
+        }
+
+    }
+);
