@@ -309,20 +309,69 @@ function showLogin() {
 
 }
 
-function revise(index, minutes){
+async function revise(index, minutes) {
 
-    controls[index].progress += minutes;
+    const control = controls[index];
 
-    if(controls[index].progress > 100){
-        controls[index].progress = 100;
+    if (!control || !control._id) {
+        alert("Contrôle introuvable.");
+        return;
     }
 
-    updateStreak();
+    const newProgress =
+        Math.min(
+            100,
+            (control.progress || 0) + minutes
+        );
 
-    save();
-    render();
+    try {
+
+        const response = await fetch(
+            "/api/controls/" + control._id,
+            {
+                method: "PUT",
+
+                headers: {
+                    "Content-Type": "application/json"
+                },
+
+                credentials: "include",
+
+                body: JSON.stringify({
+                    progress: newProgress
+                })
+            }
+        );
+
+        const data =
+            await response.json();
+
+        if (!response.ok) {
+
+            alert(
+                data.error ||
+                "Impossible de sauvegarder la progression."
+            );
+
+            return;
+        }
+
+        control.progress = newProgress;
+
+        updateStreak();
+
+        render();
+
+    } catch (error) {
+
+        console.error(error);
+
+        alert(
+            "Impossible de contacter le serveur."
+        );
+
+    }
 }
-
 function render() {
 
     controls.forEach(control => {
