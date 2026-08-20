@@ -6,9 +6,7 @@ let bestStreak =
 
 const controlsContainer = document.getElementById("controls");
 
-let controls =
-    JSON.parse(localStorage.getItem("capControle"))
-    || [];
+let controls = [];
 
 document
     .getElementById("addBtn")
