@@ -912,12 +912,40 @@ function renderHistory() {
 
     historyList.innerHTML = "";
 
-    filtered.forEach(item => {
+    filtered.forEach((item, index) => {
+
+        const realIndex =
+            history.indexOf(item);
 
         historyList.innerHTML += `
             <div class="history-item">
+
                 <h3>${item.course}</h3>
-                <p>${item.date}</p>
+
+                <div class="history-buttons">
+
+                    <button
+                        onclick="loadHistory(${realIndex})">
+                        Ouvrir
+                    </button>
+
+                    <button
+                        onclick="renameHistory(${realIndex})">
+                        Renommer
+                    </button>
+
+                    <button
+                        onclick="shareHistory(${realIndex})">
+                        Partager
+                    </button>
+
+                    <button
+                        onclick="deleteHistory(${realIndex})">
+                        Supprimer
+                    </button>
+
+                </div>
+
             </div>
         `;
 
