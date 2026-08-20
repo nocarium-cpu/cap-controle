@@ -27,19 +27,82 @@
 <body>
 
     <div id="loginScreen">
-
-        <h2>Cap Contrôle</h2>
-
-        <input
-            type="password"
-            id="passwordInput"
-            placeholder="Mot de passe"
-        >
-
-        <button onclick="checkPassword()">
-            Connexion
-        </button>
-
+    
+        <h2 id="authTitle">Connexion</h2>
+    
+        <div id="loginForm">
+    
+            <input
+                type="email"
+                id="loginEmail"
+                placeholder="Adresse e-mail"
+            >
+    
+            <input
+                type="password"
+                id="loginPassword"
+                placeholder="Mot de passe"
+            >
+    
+            <button onclick="login()">
+                Connexion
+            </button>
+    
+            <p class="auth-switch">
+                Pas encore de compte ?
+                <button
+                    type="button"
+                    class="text-button"
+                    onclick="showRegister()">
+                    Créer un compte
+                </button>
+            </p>
+    
+        </div>
+    
+    
+        <div id="registerForm" style="display:none;">
+    
+            <input
+                type="text"
+                id="registerUsername"
+                placeholder="Pseudo"
+            >
+    
+            <input
+                type="email"
+                id="registerEmail"
+                placeholder="Adresse e-mail"
+            >
+    
+            <input
+                type="password"
+                id="registerPassword"
+                placeholder="Mot de passe"
+            >
+    
+            <input
+                type="password"
+                id="registerPasswordConfirm"
+                placeholder="Confirmer le mot de passe"
+            >
+    
+            <button onclick="register()">
+                Créer mon compte
+            </button>
+    
+            <p class="auth-switch">
+                Déjà un compte ?
+                <button
+                    type="button"
+                    class="text-button"
+                    onclick="showLogin()">
+                    Se connecter
+                </button>
+            </p>
+    
+        </div>
+    
     </div>
 
     <div id="app" style="display:none;">
