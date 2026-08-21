@@ -3580,3 +3580,22 @@ window.addEventListener(
 
                 setTimeout(showLoginAfterIntro, 2200);
             }
+                    } catch (error) {
+
+            console.error(
+                "Erreur vérification session :",
+                error
+            );
+
+            const loginScreen =
+                document.getElementById(
+                    "loginScreen"
+                );
+
+            if (loginScreen) {
+                loginScreen.style.display =
+                    "block";
+            }
+        }
+    }
+);
