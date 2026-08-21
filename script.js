@@ -1389,7 +1389,9 @@ logoutButton?.addEventListener(
 window.addEventListener(
     "load",
     async () => {
+
         try {
+
             const response =
                 await fetch("/me", {
                     credentials: "include"
@@ -1398,32 +1400,98 @@ window.addEventListener(
             const data =
                 await response.json();
 
+
+            /* ========================= */
+            /* UTILISATEUR CONNECTÉ */
+            /* ========================= */
+
             if (data.loggedIn) {
-                document.getElementById(
-                    "loginScreen"
-                ).style.display = "none";
 
-                document.getElementById(
-                    "app"
-                ).style.display = "block";
+                currentUser =
+                    data.user || null;
 
-                await loadControls();
-                await loadAccountData();
-            } else {
-                document.getElementById(
-                    "loginScreen"
-                ).style.display = "block";
+                const loginScreen =
+                    document.getElementById(
+                        "loginScreen"
+                    );
 
-                document.getElementById(
-                    "app"
-                ).style.display = "none";
+                if (loginScreen) {
+                    loginScreen.style.display =
+                        "none";
+                }
+
+                await startAccountExperience();
+
+                return;
             }
+
+
+            /* ========================= */
+            /* PAS CONNECTÉ */
+            /* ========================= */
+
+            const intro =
+                document.getElementById(
+                    "intro"
+                );
+
+            const onboarding =
+                document.getElementById(
+                    "onboarding"
+                );
+
+            const success =
+                document.getElementById(
+                    "success"
+                );
+
+            const app =
+                document.getElementById(
+                    "app"
+                );
+
+            if (intro) {
+                intro.classList.add(
+                    "hidden"
+                );
+            }
+
+            if (onboarding) {
+                onboarding.classList.add(
+                    "hidden"
+                );
+            }
+
+            if (success) {
+                success.classList.add(
+                    "hidden"
+                );
+            }
+
+            if (app) {
+                app.style.display =
+                    "none";
+            }
+
+            const loginScreen =
+                document.getElementById(
+                    "loginScreen"
+                );
+
+            if (loginScreen) {
+                loginScreen.style.display =
+                    "block";
+            }
+
         } catch (error) {
+
             console.error(
                 "Erreur vérification session :",
                 error
             );
+
         }
+
     }
 );
 
