@@ -1,4 +1,3 @@
-```css
 * {
     box-sizing: border-box;
     margin: 0;
@@ -8,11 +7,16 @@
 :root {
     --blue: #2563eb;
     --blue-dark: #1d4ed8;
+
     --text: #111827;
     --muted: #6b7280;
+
     --background: #f8fafc;
     --card: #ffffff;
     --border: #e5e7eb;
+
+    --intro-background: #ffffff;
+    --input-background: #ffffff;
 }
 
 body {
@@ -21,6 +25,10 @@ body {
     color: var(--text);
     min-height: 100vh;
     overflow-x: hidden;
+
+    transition:
+        background-color .25s ease,
+        color .25s ease;
 }
 
 button {
@@ -34,21 +42,49 @@ button {
 }
 
 
-/* ========================= */
-/* INTRO */
-/* ========================= */
+/* ================================================= */
+/*                    THÈME SOMBRE                   */
+/* ================================================= */
+
+body.dark-theme {
+    --text: #f3f4f6;
+    --muted: #9ca3af;
+
+    --background: #0f172a;
+    --card: #1e293b;
+    --border: #334155;
+
+    --intro-background: #0f172a;
+    --input-background: #1e293b;
+
+    background: #0f172a;
+    color: #f3f4f6;
+}
+
+
+/* ================================================= */
+/*                      INTRO                         */
+/* ================================================= */
 
 .intro-screen {
     display: flex;
     align-items: center;
     justify-content: center;
-    background: #ffffff;
+
+    background: var(--intro-background);
+
     animation: introFade 0.6s ease;
+
+    transition:
+        background-color .25s ease,
+        opacity .3s ease;
 }
 
 .intro-content {
     text-align: center;
-    animation: introAppear 1s cubic-bezier(.2,.8,.2,1);
+
+    animation:
+        introAppear 1s cubic-bezier(.2,.8,.2,1);
 }
 
 .logo-wrapper {
@@ -60,21 +96,32 @@ button {
 .logo-circle {
     width: 90px;
     height: 90px;
+
     border-radius: 28px;
 
     display: flex;
     align-items: center;
     justify-content: center;
 
-    background: linear-gradient(135deg, #2563eb, #4f46e5);
+    background:
+        linear-gradient(
+            135deg,
+            #2563eb,
+            #4f46e5
+        );
+
     color: white;
 
     font-size: 48px;
     font-weight: 800;
 
-    box-shadow: 0 20px 50px rgba(37, 99, 235, .25);
+    box-shadow:
+        0 20px 50px rgba(37, 99, 235, .25);
 
-    animation: logoAnimation 1.2s cubic-bezier(.2,.8,.2,1);
+    animation:
+        logoAnimation
+        1.2s
+        cubic-bezier(.2,.8,.2,1);
 }
 
 .intro-content h1 {
@@ -88,55 +135,97 @@ button {
     margin-top: 8px;
 }
 
+
+/* ================================================= */
+/*                BARRE DE CHARGEMENT                */
+/* ================================================= */
+
 .loading-bar {
     width: 160px;
     height: 4px;
+
     background: #e5e7eb;
+
     border-radius: 10px;
+
     margin: 32px auto 0;
+
     overflow: hidden;
+}
+
+.dark-theme .loading-bar {
+    background: #334155;
 }
 
 .loading-bar div {
     height: 100%;
     width: 0;
-    background: var(--blue);
-    animation: loading 1.8s ease forwards;
+
+    background:
+        linear-gradient(
+            90deg,
+            #2563eb,
+            #4f46e5
+        );
+
+    border-radius: 10px;
+
+    animation:
+        loading 3s
+        cubic-bezier(.2,.8,.2,1)
+        forwards;
 }
 
 
-/* ========================= */
-/* ONBOARDING */
-/* ========================= */
+/* ================================================= */
+/*                   ONBOARDING                      */
+/* ================================================= */
 
 .onboarding {
     display: flex;
     justify-content: center;
+
     padding: 30px 20px;
+
+    background: var(--background);
+
+    transition:
+        background-color .25s ease;
 }
 
 .onboarding-container {
     width: 100%;
     max-width: 650px;
+
     padding-top: 20px;
 }
 
 
-/* PROGRESSION */
+/* ================================================= */
+/*                  PROGRESSION                      */
+/* ================================================= */
 
 .progress-header {
     display: flex;
     align-items: center;
+
     gap: 15px;
+
     margin-bottom: 50px;
 }
 
 .back-button {
     width: 40px;
     height: 40px;
+
     border-radius: 12px;
-    background: white;
+
+    background: var(--card);
+
     border: 1px solid var(--border);
+
+    color: var(--text);
+
     font-size: 20px;
 
     transition: .2s;
@@ -148,32 +237,58 @@ button {
 
 .progress-container {
     flex: 1;
+
     height: 6px;
+
     background: #e5e7eb;
+
     border-radius: 10px;
+
     overflow: hidden;
+}
+
+.dark-theme .progress-container {
+    background: #334155;
 }
 
 #progressBar {
     height: 100%;
+
     width: 16.66%;
-    background: linear-gradient(90deg, #2563eb, #4f46e5);
+
+    background:
+        linear-gradient(
+            90deg,
+            #2563eb,
+            #4f46e5
+        );
+
     border-radius: 10px;
-    transition: width .45s cubic-bezier(.2,.8,.2,1);
+
+    transition:
+        width .45s
+        cubic-bezier(.2,.8,.2,1);
 }
 
 #stepNumber {
     color: var(--muted);
+
     font-size: 14px;
     font-weight: 600;
 }
 
 
-/* STEPS */
+/* ================================================= */
+/*                     ÉTAPES                        */
+/* ================================================= */
 
 .step {
     display: none;
-    animation: stepEnter .45s cubic-bezier(.2,.8,.2,1);
+
+    animation:
+        stepEnter
+        .45s
+        cubic-bezier(.2,.8,.2,1);
 }
 
 .step.active {
@@ -182,12 +297,15 @@ button {
 
 .emoji {
     font-size: 50px;
+
     margin-bottom: 20px;
 }
 
 .step h2 {
     font-size: 38px;
+
     line-height: 1.15;
+
     letter-spacing: -1.5px;
 }
 
@@ -197,32 +315,48 @@ button {
 
 .subtitle {
     color: var(--muted);
+
     margin-top: 14px;
+
     line-height: 1.6;
 }
 
 
-/* BOUTONS */
+/* ================================================= */
+/*                    BOUTONS                        */
+/* ================================================= */
 
 .primary-button {
     width: 100%;
+
     margin-top: 30px;
+
     padding: 17px 22px;
 
     border-radius: 16px;
 
-    background: linear-gradient(135deg, #2563eb, #4f46e5);
+    background:
+        linear-gradient(
+            135deg,
+            #2563eb,
+            #4f46e5
+        );
+
     color: white;
 
     font-size: 16px;
     font-weight: 700;
 
     display: flex;
+
     justify-content: center;
     align-items: center;
+
     gap: 12px;
 
-    box-shadow: 0 12px 25px rgba(37, 99, 235, .20);
+    box-shadow:
+        0 12px 25px
+        rgba(37, 99, 235, .20);
 
     transition:
         transform .2s ease,
@@ -232,7 +366,10 @@ button {
 
 .primary-button:hover:not(.disabled) {
     transform: translateY(-2px);
-    box-shadow: 0 16px 30px rgba(37, 99, 235, .28);
+
+    box-shadow:
+        0 16px 30px
+        rgba(37, 99, 235, .28);
 }
 
 .primary-button:active:not(.disabled) {
@@ -241,16 +378,23 @@ button {
 
 .primary-button.disabled {
     opacity: .4;
+
     cursor: not-allowed;
 }
 
 
-/* CARTES */
+/* ================================================= */
+/*                     CARTES                        */
+/* ================================================= */
 
 .choice-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+
+    grid-template-columns:
+        1fr 1fr;
+
     gap: 15px;
+
     margin-top: 30px;
 }
 
@@ -258,47 +402,63 @@ button {
     position: relative;
 
     padding: 25px;
+
     text-align: left;
 
     border-radius: 20px;
 
-    background: white;
+    background: var(--card);
+
+    color: var(--text);
+
     border: 2px solid var(--border);
 
-    transition: .25s cubic-bezier(.2,.8,.2,1);
+    transition:
+        .25s
+        cubic-bezier(.2,.8,.2,1);
 }
 
 .choice-card:hover {
     transform: translateY(-4px);
+
     border-color: #bfdbfe;
 }
 
 .choice-card.selected {
     border-color: var(--blue);
-    background: #eff6ff;
+
+    background: rgba(37,99,235,.10);
+
     transform: scale(1.02);
 }
 
 .choice-icon {
     font-size: 38px;
+
     margin-bottom: 20px;
 }
 
 .choice-card strong {
     display: block;
+
     font-size: 18px;
 }
 
 .choice-card span {
     display: block;
+
     color: var(--muted);
+
     font-size: 13px;
+
     margin-top: 7px;
+
     line-height: 1.5;
 }
 
 .check {
     position: absolute;
+
     top: 15px;
     right: 15px;
 
@@ -308,14 +468,19 @@ button {
     border-radius: 50%;
 
     background: var(--blue);
+
     color: white;
 
     display: flex;
+
     align-items: center;
     justify-content: center;
 
     transform: scale(0);
-    transition: .25s cubic-bezier(.2,.8,.2,1);
+
+    transition:
+        .25s
+        cubic-bezier(.2,.8,.2,1);
 }
 
 .choice-card.selected .check {
@@ -323,23 +488,34 @@ button {
 }
 
 
-/* CLASSES */
+/* ================================================= */
+/*                    CLASSES                        */
+/* ================================================= */
 
 .class-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+
+    grid-template-columns:
+        repeat(3, 1fr);
+
     gap: 12px;
+
     margin-top: 30px;
 }
 
 .small-choice {
     padding: 18px;
+
     border-radius: 15px;
 
-    background: white;
+    background: var(--card);
+
+    color: var(--text);
+
     border: 2px solid var(--border);
 
     font-size: 16px;
+
     font-weight: 700;
 
     transition: .2s;
@@ -350,18 +526,26 @@ button {
 }
 
 .small-choice.selected {
-    background: #eff6ff;
+    background: rgba(37,99,235,.10);
+
     border-color: var(--blue);
+
     color: var(--blue);
 }
 
 
-/* MATIÈRES */
+/* ================================================= */
+/*                    MATIÈRES                       */
+/* ================================================= */
 
 .subjects-grid {
     display: grid;
-    grid-template-columns: 1fr 1fr;
+
+    grid-template-columns:
+        1fr 1fr;
+
     gap: 12px;
+
     margin-top: 30px;
 }
 
@@ -370,7 +554,10 @@ button {
 
     border-radius: 15px;
 
-    background: white;
+    background: var(--card);
+
+    color: var(--text);
+
     border: 2px solid var(--border);
 
     text-align: left;
@@ -385,30 +572,43 @@ button {
 }
 
 .subject.selected {
-    background: #eff6ff;
+    background: rgba(37,99,235,.10);
+
     border-color: var(--blue);
+
     color: var(--blue);
 }
 
 
-/* OBJECTIFS */
+/* ================================================= */
+/*                    OBJECTIFS                      */
+/* ================================================= */
 
 .objective-list {
     display: flex;
+
     flex-direction: column;
+
     gap: 10px;
+
     margin-top: 30px;
 }
 
 .objective {
     padding: 18px;
 
-    background: white;
+    background: var(--card);
+
+    color: var(--text);
+
     border: 2px solid var(--border);
+
     border-radius: 15px;
 
     text-align: left;
+
     font-size: 15px;
+
     font-weight: 600;
 
     transition: .2s;
@@ -419,26 +619,38 @@ button {
 }
 
 .objective.selected {
-    background: #eff6ff;
+    background: rgba(37,99,235,.10);
+
     border-color: var(--blue);
+
     color: var(--blue);
 }
 
 
-/* TEMPS */
+/* ================================================= */
+/*                      TEMPS                        */
+/* ================================================= */
 
 .time-grid {
     display: grid;
-    grid-template-columns: repeat(3, 1fr);
+
+    grid-template-columns:
+        repeat(3, 1fr);
+
     gap: 12px;
+
     margin-top: 30px;
 }
 
 .time-choice {
     padding: 20px;
 
-    background: white;
+    background: var(--card);
+
+    color: var(--text);
+
     border: 2px solid var(--border);
+
     border-radius: 15px;
 
     font-weight: 700;
@@ -451,30 +663,40 @@ button {
 }
 
 .time-choice.selected {
-    background: #eff6ff;
+    background: rgba(37,99,235,.10);
+
     border-color: var(--blue);
+
     color: var(--blue);
 }
 
 
-/* ========================= */
-/* SUCCESS */
-/* ========================= */
+/* ================================================= */
+/*                     SUCCESS                       */
+/* ================================================= */
 
 .success-screen {
     display: flex;
+
     justify-content: center;
     align-items: center;
+
     text-align: center;
 
     padding: 25px;
+
+    background: var(--background);
 }
 
 .success-content {
     width: 100%;
+
     max-width: 500px;
 
-    animation: successAppear .7s cubic-bezier(.2,.8,.2,1);
+    animation:
+        successAppear
+        .7s
+        cubic-bezier(.2,.8,.2,1);
 }
 
 .success-icon {
@@ -486,27 +708,37 @@ button {
     border-radius: 50%;
 
     background: #22c55e;
+
     color: white;
 
     font-size: 45px;
 
     display: flex;
+
     align-items: center;
     justify-content: center;
 
-    box-shadow: 0 20px 40px rgba(34, 197, 94, .25);
+    box-shadow:
+        0 20px 40px
+        rgba(34,197,94,.25);
 
-    animation: successPop .6s cubic-bezier(.2,1.4,.4,1);
+    animation:
+        successPop
+        .6s
+        cubic-bezier(.2,1.4,.4,1);
 }
 
 .success-content h2 {
     font-size: 36px;
+
     letter-spacing: -1px;
 }
 
 .success-content p {
     color: var(--muted);
+
     margin-top: 12px;
+
     line-height: 1.6;
 }
 
@@ -515,56 +747,77 @@ button {
 
     padding: 20px;
 
-    background: white;
+    background: var(--card);
+
+    color: var(--text);
+
     border: 1px solid var(--border);
+
     border-radius: 18px;
 
     line-height: 1.8;
 }
 
 
-/* ========================= */
-/* UTILITAIRES */
-/* ========================= */
+/* ================================================= */
+/*                   UTILITAIRES                     */
+/* ================================================= */
 
 .hidden {
     display: none !important;
 }
 
 
-/* ========================= */
-/* ANIMATIONS */
-/* ========================= */
+/* ================================================= */
+/*                    ANIMATIONS                     */
+/* ================================================= */
 
 @keyframes introAppear {
+
     from {
         opacity: 0;
-        transform: translateY(25px) scale(.96);
+
+        transform:
+            translateY(25px)
+            scale(.96);
     }
 
     to {
         opacity: 1;
-        transform: translateY(0) scale(1);
+
+        transform:
+            translateY(0)
+            scale(1);
     }
 }
 
 @keyframes logoAnimation {
+
     0% {
         opacity: 0;
-        transform: scale(.5) rotate(-10deg);
+
+        transform:
+            scale(.5)
+            rotate(-10deg);
     }
 
     70% {
-        transform: scale(1.08) rotate(2deg);
+        transform:
+            scale(1.08)
+            rotate(2deg);
     }
 
     100% {
         opacity: 1;
-        transform: scale(1) rotate(0);
+
+        transform:
+            scale(1)
+            rotate(0);
     }
 }
 
 @keyframes loading {
+
     from {
         width: 0;
     }
@@ -575,30 +828,43 @@ button {
 }
 
 @keyframes stepEnter {
+
     from {
         opacity: 0;
-        transform: translateX(30px);
+
+        transform:
+            translateX(30px);
     }
 
     to {
         opacity: 1;
-        transform: translateX(0);
+
+        transform:
+            translateX(0);
     }
 }
 
 @keyframes successAppear {
+
     from {
         opacity: 0;
-        transform: translateY(30px) scale(.96);
+
+        transform:
+            translateY(30px)
+            scale(.96);
     }
 
     to {
         opacity: 1;
-        transform: translateY(0) scale(1);
+
+        transform:
+            translateY(0)
+            scale(1);
     }
 }
 
 @keyframes successPop {
+
     from {
         transform: scale(0);
     }
@@ -609,9 +875,9 @@ button {
 }
 
 
-/* ========================= */
-/* MOBILE */
-/* ========================= */
+/* ================================================= */
+/*                      MOBILE                       */
+/* ================================================= */
 
 @media (max-width: 600px) {
 
@@ -632,7 +898,8 @@ button {
     }
 
     .class-grid {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns:
+            repeat(2, 1fr);
     }
 
     .subjects-grid {
@@ -640,11 +907,11 @@ button {
     }
 
     .time-grid {
-        grid-template-columns: repeat(2, 1fr);
+        grid-template-columns:
+            repeat(2, 1fr);
     }
 
     .intro-content h1 {
         font-size: 32px;
     }
 }
-```
