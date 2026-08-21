@@ -73,8 +73,6 @@ body.dark-theme {
 
     background: var(--intro-background);
 
-    animation: introFade 0.6s ease;
-
     transition:
         background-color .25s ease,
         opacity .3s ease;
