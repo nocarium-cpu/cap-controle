@@ -2768,9 +2768,10 @@ function showIntro() {
          * Sécurité : si le navigateur ne déclenche
          * pas animationend, l'intro ne reste pas bloquée.
          */
+                
         setTimeout(
             finishOnce,
-            2500
+            3500
         );
 
     } else {
