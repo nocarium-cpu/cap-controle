@@ -399,7 +399,8 @@ app.post("/register", async (request, response) => {
             passwordHash: passwordData.hash,
             passwordSalt: passwordData.salt,
             createdAt: now,
-            lastRevisionDate: null
+            lastRevisionDate: null,
+            onboardingCompleted: false
         };
 
         const result =
