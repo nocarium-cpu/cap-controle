@@ -2006,7 +2006,6 @@ function loadTheme() {
         themeSelect.value = savedTheme;
     }
 }
-
 window.addEventListener("load", loadTheme);
 
 /* ================================================= */
