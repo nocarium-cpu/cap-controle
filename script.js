@@ -6,21 +6,121 @@ let history = [];
 
 let currentUser = null;
 
-const controlsContainer = document.getElementById("controls");
+const controlsContainer =
+    document.getElementById("controls");
 
 
 /* ================================================= */
-/*                    CONTRÔLES                      */
+/*                 THÈME SOMBRE                      */
+/* ================================================= */
+
+function applyTheme(theme) {
+
+    if (theme === "dark") {
+        document.body.classList.add("dark-theme");
+        document.documentElement.style.setProperty(
+            "--background",
+            "#0f172a"
+        );
+        document.documentElement.style.setProperty(
+            "--card",
+            "#1e293b"
+        );
+        document.documentElement.style.setProperty(
+            "--text",
+            "#f8fafc"
+        );
+        document.documentElement.style.setProperty(
+            "--muted",
+            "#94a3b8"
+        );
+        document.documentElement.style.setProperty(
+            "--border",
+            "#334155"
+        );
+
+    } else {
+
+        document.body.classList.remove("dark-theme");
+
+        document.documentElement.style.setProperty(
+            "--background",
+            "#f8fafc"
+        );
+        document.documentElement.style.setProperty(
+            "--card",
+            "#ffffff"
+        );
+        document.documentElement.style.setProperty(
+            "--text",
+            "#111827"
+        );
+        document.documentElement.style.setProperty(
+            "--muted",
+            "#6b7280"
+        );
+        document.documentElement.style.setProperty(
+            "--border",
+            "#e5e7eb"
+        );
+    }
+}
+
+
+function loadTheme() {
+
+    const savedTheme =
+        localStorage.getItem("capControleTheme") || "light";
+
+    applyTheme(savedTheme);
+
+    const themeSelect =
+        document.getElementById("themeSelect");
+
+    if (themeSelect) {
+        themeSelect.value = savedTheme;
+    }
+}
+
+
+function changeTheme() {
+
+    const themeSelect =
+        document.getElementById("themeSelect");
+
+    if (!themeSelect) {
+        return;
+    }
+
+    const theme =
+        themeSelect.value;
+
+    localStorage.setItem(
+        "capControleTheme",
+        theme
+    );
+
+    applyTheme(theme);
+}
+
+
+/* ================================================= */
+/*                  CONTRÔLES                        */
 /* ================================================= */
 
 async function loadControls() {
+
     try {
-        const response = await fetch("/api/controls", {
-            credentials: "include"
-        });
+
+        const response =
+            await fetch("/api/controls", {
+                credentials: "include"
+            });
 
         if (!response.ok) {
-            console.error("Impossible de charger les contrôles.");
+            console.error(
+                "Impossible de charger les contrôles."
+            );
             return;
         }
 
@@ -33,40 +133,78 @@ async function loadControls() {
         render();
 
     } catch (error) {
-        console.error("Erreur chargement contrôles :", error);
+
+        console.error(
+            "Erreur chargement contrôles :",
+            error
+        );
     }
 }
 
-document.getElementById("addBtn")?.addEventListener("click", addControl);
+
+document
+    .getElementById("addBtn")
+    ?.addEventListener(
+        "click",
+        addControl
+    );
+
 
 async function addControl() {
-    const subject = document.getElementById("subject")?.value.trim();
-    const chapter = document.getElementById("chapter")?.value.trim();
-    const date = document.getElementById("date")?.value;
+
+    const subject =
+        document
+            .getElementById("subject")
+            ?.value
+            .trim();
+
+    const chapter =
+        document
+            .getElementById("chapter")
+            ?.value
+            .trim();
+
+    const date =
+        document
+            .getElementById("date")
+            ?.value;
 
     if (!subject || !chapter || !date) {
-        alert("Remplis tous les champs.");
+
+        alert(
+            "Remplis tous les champs."
+        );
+
         return;
     }
 
     try {
-        const response = await fetch("/api/controls", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            credentials: "include",
-            body: JSON.stringify({
-                subject,
-                chapter,
-                date
-            })
-        });
 
-        const data = await response.json();
+        const response =
+            await fetch("/api/controls", {
+                method: "POST",
+                headers: {
+                    "Content-Type":
+                        "application/json"
+                },
+                credentials: "include",
+                body: JSON.stringify({
+                    subject,
+                    chapter,
+                    date
+                })
+            });
+
+        const data =
+            await response.json();
 
         if (!response.ok) {
-            alert(data.error || "Impossible d'ajouter le contrôle.");
+
+            alert(
+                data.error ||
+                "Impossible d'ajouter le contrôle."
+            );
+
             return;
         }
 
@@ -74,13 +212,25 @@ async function addControl() {
 
         render();
 
-        document.getElementById("subject").value = "";
-        document.getElementById("chapter").value = "";
-        document.getElementById("date").value = "";
+        document.getElementById(
+            "subject"
+        ).value = "";
+
+        document.getElementById(
+            "chapter"
+        ).value = "";
+
+        document.getElementById(
+            "date"
+        ).value = "";
 
     } catch (error) {
+
         console.error(error);
-        alert("Impossible de contacter le serveur.");
+
+        alert(
+            "Impossible de contacter le serveur."
+        );
     }
 }
 
@@ -90,26 +240,43 @@ async function addControl() {
 /* ================================================= */
 
 async function loadAccountData() {
+
     try {
-        const statsResponse = await fetch("/api/stats", {
-            credentials: "include"
-        });
+
+        const statsResponse =
+            await fetch("/api/stats", {
+                credentials: "include"
+            });
 
         if (statsResponse.ok) {
-            const stats = await statsResponse.json();
 
-            streak = Number(stats.streak) || 0;
-            bestStreak = Number(stats.bestStreak) || 0;
+            const stats =
+                await statsResponse.json();
+
+            streak =
+                Number(stats.streak) || 0;
+
+            bestStreak =
+                Number(stats.bestStreak) || 0;
         }
 
-        const historyResponse = await fetch("/api/history", {
-            credentials: "include"
-        });
+        const historyResponse =
+            await fetch("/api/history", {
+                credentials: "include"
+            });
 
         if (historyResponse.ok) {
-            const data = await historyResponse.json();
-            history = Array.isArray(data) ? data : [];
+
+            const data =
+                await historyResponse.json();
+
+            history =
+                Array.isArray(data)
+                    ? data
+                    : [];
+
         } else {
+
             history = [];
         }
 
@@ -117,135 +284,192 @@ async function loadAccountData() {
         renderHistory();
 
     } catch (error) {
-        console.error("Erreur chargement données compte :", error);
+
+        console.error(
+            "Erreur chargement données compte :",
+            error
+        );
     }
 }
 
 
 async function saveStats() {
+
     try {
-        const response = await fetch("/api/stats", {
-            method: "PUT",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            credentials: "include",
-            body: JSON.stringify({
-                streak,
-                bestStreak
-            })
-        });
+
+        const response =
+            await fetch("/api/stats", {
+                method: "PUT",
+                headers: {
+                    "Content-Type":
+                        "application/json"
+                },
+                credentials: "include",
+                body: JSON.stringify({
+                    streak,
+                    bestStreak
+                })
+            });
 
         if (!response.ok) {
-            console.error("Impossible de sauvegarder la série.");
+
+            console.error(
+                "Impossible de sauvegarder la série."
+            );
         }
 
     } catch (error) {
-        console.error("Erreur sauvegarde série :", error);
+
+        console.error(
+            "Erreur sauvegarde série :",
+            error
+        );
     }
 }
 
 
 /* ================================================= */
-/*                     DATES                         */
+/*                    DATES                          */
 /* ================================================= */
 
 function getDaysLeft(date) {
+
     const today = new Date();
 
-    today.setHours(0, 0, 0, 0);
+    today.setHours(
+        0,
+        0,
+        0,
+        0
+    );
 
-    const parts = String(date).split("-");
+    const parts =
+        String(date).split("-");
 
     if (parts.length !== 3) {
         return 0;
     }
 
-    const examDate = new Date(
-        Number(parts[0]),
-        Number(parts[1]) - 1,
-        Number(parts[2])
+    const examDate =
+        new Date(
+            Number(parts[0]),
+            Number(parts[1]) - 1,
+            Number(parts[2])
+        );
+
+    examDate.setHours(
+        0,
+        0,
+        0,
+        0
     );
 
-    examDate.setHours(0, 0, 0, 0);
-
     return Math.round(
-        (examDate - today) / (1000 * 60 * 60 * 24)
+        (examDate - today) /
+        (1000 * 60 * 60 * 24)
     );
 }
 
 
 function formatDate(dateString) {
-    const date = new Date(dateString);
+
+    const date =
+        new Date(dateString);
 
     if (Number.isNaN(date.getTime())) {
         return dateString;
     }
 
-    return date.toLocaleDateString("fr-FR", {
-        day: "numeric",
-        month: "long"
-    });
+    return date.toLocaleDateString(
+        "fr-FR",
+        {
+            day: "numeric",
+            month: "long"
+        }
+    );
 }
 
 
 /* ================================================= */
-/*                    CONNEXION                      */
+/*                    CONNEXION                     */
 /* ================================================= */
 
 async function login() {
-    const emailElement = document.getElementById("loginEmail");
-    const passwordElement = document.getElementById("loginPassword");
 
-    if (!emailElement || !passwordElement) {
-        return;
-    }
+    const email =
+        document
+            .getElementById("loginEmail")
+            ?.value
+            .trim();
 
-    const email = emailElement.value.trim();
-    const password = passwordElement.value;
+    const password =
+        document
+            .getElementById("loginPassword")
+            ?.value;
 
     if (!email || !password) {
-        alert("Remplis tous les champs.");
+
+        alert(
+            "Remplis tous les champs."
+        );
+
         return;
     }
 
     try {
-        const response = await fetch("/login", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            credentials: "include",
-            body: JSON.stringify({
-                email,
-                password
-            })
-        });
 
-        const data = await response.json();
+        const response =
+            await fetch("/login", {
+                method: "POST",
+                headers: {
+                    "Content-Type":
+                        "application/json"
+                },
+                credentials: "include",
+                body: JSON.stringify({
+                    email,
+                    password
+                })
+            });
+
+        const data =
+            await response.json();
 
         if (!response.ok) {
-            alert(data.error || "Erreur de connexion.");
+
+            alert(
+                data.error ||
+                "Erreur de connexion."
+            );
+
             return;
         }
 
-        const meResponse = await fetch("/me", {
-            credentials: "include"
-        });
+        const meResponse =
+            await fetch("/me", {
+                credentials: "include"
+            });
 
         if (meResponse.ok) {
-            const meData = await meResponse.json();
+
+            const meData =
+                await meResponse.json();
 
             if (meData.user) {
-                currentUser = meData.user;
+                currentUser =
+                    meData.user;
             }
         }
 
         await startAccountExperience();
 
     } catch (error) {
+
         console.error(error);
-        alert("Impossible de contacter le serveur.");
+
+        alert(
+            "Impossible de contacter le serveur."
+        );
     }
 }
 
@@ -255,91 +479,129 @@ async function login() {
 /* ================================================= */
 
 async function register() {
-    const usernameElement =
-        document.getElementById("registerUsername");
 
-    const emailElement =
-        document.getElementById("registerEmail");
+    const username =
+        document
+            .getElementById("registerUsername")
+            ?.value
+            .trim();
 
-    const passwordElement =
-        document.getElementById("registerPassword");
+    const email =
+        document
+            .getElementById("registerEmail")
+            ?.value
+            .trim();
 
-    const confirmPasswordElement =
-        document.getElementById("registerPasswordConfirm");
+    const password =
+        document
+            .getElementById("registerPassword")
+            ?.value;
+
+    const confirmPassword =
+        document
+            .getElementById(
+                "registerPasswordConfirm"
+            )
+            ?.value;
 
     if (
-        !usernameElement ||
-        !emailElement ||
-        !passwordElement ||
-        !confirmPasswordElement
+        !username ||
+        !email ||
+        !password ||
+        !confirmPassword
     ) {
-        return;
-    }
 
-    const username = usernameElement.value.trim();
-    const email = emailElement.value.trim();
-    const password = passwordElement.value;
-    const confirmPassword = confirmPasswordElement.value;
+        alert(
+            "Remplis tous les champs."
+        );
 
-    if (!username || !email || !password || !confirmPassword) {
-        alert("Remplis tous les champs.");
         return;
     }
 
     if (password !== confirmPassword) {
-        alert("Les mots de passe ne correspondent pas.");
+
+        alert(
+            "Les mots de passe ne correspondent pas."
+        );
+
         return;
     }
 
     try {
-        const response = await fetch("/register", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            credentials: "include",
-            body: JSON.stringify({
-                username,
-                email,
-                password
-            })
-        });
 
-        const data = await response.json();
+        const response =
+            await fetch("/register", {
+                method: "POST",
+                headers: {
+                    "Content-Type":
+                        "application/json"
+                },
+                credentials: "include",
+                body: JSON.stringify({
+                    username,
+                    email,
+                    password
+                })
+            });
+
+        const data =
+            await response.json();
 
         if (!response.ok) {
+
             alert(
                 data.error ||
                 "Erreur lors de la création du compte."
             );
+
             return;
         }
 
-        const meResponse = await fetch("/me", {
-            credentials: "include"
-        });
+        const meResponse =
+            await fetch("/me", {
+                credentials: "include"
+            });
 
         if (meResponse.ok) {
-            const meData = await meResponse.json();
+
+            const meData =
+                await meResponse.json();
 
             if (meData.user) {
-                currentUser = meData.user;
+                currentUser =
+                    meData.user;
             }
         }
 
         await startAccountExperience();
 
     } catch (error) {
+
         console.error(error);
-        alert("Impossible de contacter le serveur.");
+
+        alert(
+            "Impossible de contacter le serveur."
+        );
     }
 }
 
 
 function showRegister() {
-    const loginForm = document.getElementById("loginForm");
-    const registerForm = document.getElementById("registerForm");
-    const authTitle = document.getElementById("authTitle");
+
+    const loginForm =
+        document.getElementById(
+            "loginForm"
+        );
+
+    const registerForm =
+        document.getElementById(
+            "registerForm"
+        );
+
+    const title =
+        document.getElementById(
+            "authTitle"
+        );
 
     if (loginForm) {
         loginForm.style.display = "none";
@@ -349,16 +611,29 @@ function showRegister() {
         registerForm.style.display = "block";
     }
 
-    if (authTitle) {
-        authTitle.textContent = "Créer un compte";
+    if (title) {
+        title.textContent =
+            "Créer un compte";
     }
 }
 
 
 function showLogin() {
-    const loginForm = document.getElementById("loginForm");
-    const registerForm = document.getElementById("registerForm");
-    const authTitle = document.getElementById("authTitle");
+
+    const loginForm =
+        document.getElementById(
+            "loginForm"
+        );
+
+    const registerForm =
+        document.getElementById(
+            "registerForm"
+        );
+
+    const title =
+        document.getElementById(
+            "authTitle"
+        );
 
     if (registerForm) {
         registerForm.style.display = "none";
@@ -368,8 +643,9 @@ function showLogin() {
         loginForm.style.display = "block";
     }
 
-    if (authTitle) {
-        authTitle.textContent = "Connexion";
+    if (title) {
+        title.textContent =
+            "Connexion";
     }
 }
 
@@ -379,52 +655,73 @@ function showLogin() {
 /* ================================================= */
 
 async function revise(index, minutes) {
-    const control = controls[index];
+
+    const control =
+        controls[index];
 
     if (!control || !control._id) {
-        alert("Contrôle introuvable.");
+
+        alert(
+            "Contrôle introuvable."
+        );
+
         return;
     }
 
-    const newProgress = Math.min(
-        100,
-        (Number(control.progress) || 0) + Number(minutes)
-    );
-
-    try {
-        const response = await fetch(
-            "/api/controls/" + control._id,
-            {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                credentials: "include",
-                body: JSON.stringify({
-                    progress: newProgress
-                })
-            }
+    const newProgress =
+        Math.min(
+            100,
+            (Number(control.progress) || 0) +
+            Number(minutes)
         );
 
-        const data = await response.json();
+    try {
+
+        const response =
+            await fetch(
+                "/api/controls/" +
+                control._id,
+                {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+                    credentials: "include",
+                    body: JSON.stringify({
+                        progress:
+                            newProgress
+                    })
+                }
+            );
+
+        const data =
+            await response.json();
 
         if (!response.ok) {
+
             alert(
                 data.error ||
                 "Impossible de sauvegarder la progression."
             );
+
             return;
         }
 
-        control.progress = newProgress;
+        control.progress =
+            newProgress;
 
         await updateStreak();
 
         render();
 
     } catch (error) {
+
         console.error(error);
-        alert("Impossible de contacter le serveur.");
+
+        alert(
+            "Impossible de contacter le serveur."
+        );
     }
 }
 
@@ -434,37 +731,55 @@ async function revise(index, minutes) {
 /* ================================================= */
 
 function render() {
+
     if (!controlsContainer) {
         return;
     }
 
     controls.sort(
         (a, b) =>
-            new Date(a.date) - new Date(b.date)
+            new Date(a.date) -
+            new Date(b.date)
     );
 
     controlsContainer.innerHTML = "";
 
     const dashboard =
-        document.getElementById("dashboard");
+        document.getElementById(
+            "dashboard"
+        );
 
     const nextExamCard =
-        document.getElementById("nextExam");
+        document.getElementById(
+            "nextExam"
+        );
 
     const todayRevision =
-        document.getElementById("todayRevision");
+        document.getElementById(
+            "todayRevision"
+        );
 
-    const futureControls = controls.filter(
-        control => getDaysLeft(control.date) >= 0
-    );
+    const futureControls =
+        controls.filter(
+            control =>
+                getDaysLeft(control.date) >= 0
+        );
 
-    const nextControl = futureControls[0];
+    const nextControl =
+        futureControls[0];
 
     if (dashboard) {
+
         dashboard.innerHTML = `
+
             <div class="stat">
-                <div class="stat-number">${controls.length}</div>
-                <div class="stat-label">Contrôles</div>
+                <div class="stat-number">
+                    ${controls.length}
+                </div>
+
+                <div class="stat-label">
+                    Contrôles
+                </div>
             </div>
 
             <div class="stat">
@@ -472,167 +787,245 @@ function render() {
                     ${
                         futureControls.filter(
                             control =>
-                                getDaysLeft(control.date) <= 7
+                                getDaysLeft(
+                                    control.date
+                                ) <= 7
                         ).length
                     }
                 </div>
-                <div class="stat-label">Cette semaine</div>
+
+                <div class="stat-label">
+                    Cette semaine
+                </div>
             </div>
 
             <div class="stat">
                 <div class="stat-number">
                     ${
                         nextControl
-                            ? getDaysLeft(nextControl.date)
+                            ? getDaysLeft(
+                                nextControl.date
+                            )
                             : "-"
                     }
                 </div>
-                <div class="stat-label">Jours restants</div>
+
+                <div class="stat-label">
+                    Jours restants
+                </div>
             </div>
 
             <div class="stat">
-                <div class="stat-number">${streak}</div>
-                <div class="stat-label">Série</div>
+                <div class="stat-number">
+                    ${streak}
+                </div>
+
+                <div class="stat-label">
+                    Série
+                </div>
             </div>
 
             <div class="stat">
-                <div class="stat-number">${bestStreak}</div>
-                <div class="stat-label">Record</div>
+                <div class="stat-number">
+                    ${bestStreak}
+                </div>
+
+                <div class="stat-label">
+                    Record
+                </div>
             </div>
         `;
     }
 
     if (nextExamCard) {
+
         if (nextControl) {
+
             nextExamCard.innerHTML = `
-                <h3>${escapeHTML(nextControl.subject)}</h3>
-                <p>${escapeHTML(nextControl.chapter)}</p>
+
+                <h3>
+                    ${escapeHTML(
+                        nextControl.subject
+                    )}
+                </h3>
+
                 <p>
-                    Dans ${getDaysLeft(nextControl.date)} jour(s)
+                    ${escapeHTML(
+                        nextControl.chapter
+                    )}
+                </p>
+
+                <p>
+                    Dans ${
+                        getDaysLeft(
+                            nextControl.date
+                        )
+                    } jour(s)
                 </p>
             `;
+
         } else {
+
             nextExamCard.innerHTML = `
                 <h2>Aucun contrôle prévu</h2>
             `;
         }
     }
 
-    const revisionsNeeded = futureControls
-        .filter(
-            control =>
-                (Number(control.progress) || 0) < 100
-        )
-        .slice(0, 3);
+    const revisionsNeeded =
+        futureControls
+            .filter(
+                control =>
+                    (Number(control.progress) || 0) < 100
+            )
+            .slice(0, 3);
 
     if (todayRevision) {
+
         if (revisionsNeeded.length) {
+
             todayRevision.innerHTML = `
                 <h2>À réviser aujourd'hui</h2>
             `;
 
-            revisionsNeeded.forEach(control => {
-                todayRevision.innerHTML += `
-                    <div class="today-item">
-                        <strong>
-                            ${escapeHTML(control.subject)}
-                        </strong>
+            revisionsNeeded.forEach(
+                control => {
 
-                        <p>
-                            ${escapeHTML(control.chapter)}
-                        </p>
+                    todayRevision.innerHTML += `
 
-                        <p>
-                            ${Number(control.progress) || 0}% terminé
-                        </p>
-                    </div>
-                `;
-            });
+                        <div class="today-item">
+
+                            <strong>
+                                ${escapeHTML(
+                                    control.subject
+                                )}
+                            </strong>
+
+                            <p>
+                                ${escapeHTML(
+                                    control.chapter
+                                )}
+                            </p>
+
+                            <p>
+                                ${
+                                    Number(
+                                        control.progress
+                                    ) || 0
+                                }% terminé
+                            </p>
+
+                        </div>
+                    `;
+                }
+            );
 
         } else {
+
             todayRevision.innerHTML = `
                 <h2>Tout est révisé !</h2>
             `;
         }
     }
 
-    controls.forEach((control, index) => {
-        const daysLeft = getDaysLeft(control.date);
+    controls.forEach(
+        (control, index) => {
 
-        let className = "normal";
+            const daysLeft =
+                getDaysLeft(control.date);
 
-        if (daysLeft <= 3) {
-            className = "urgent";
-        } else if (daysLeft <= 7) {
-            className = "soon";
+            let className =
+                "normal";
+
+            if (daysLeft <= 3) {
+                className = "urgent";
+            } else if (daysLeft <= 7) {
+                className = "soon";
+            }
+
+            const progress =
+                Number(control.progress) || 0;
+
+            controlsContainer.innerHTML += `
+
+                <div class="card control">
+
+                    <h3>
+                        ${escapeHTML(
+                            control.subject
+                        )}
+                    </h3>
+
+                    <p>
+                        Chapitre :
+                        ${escapeHTML(
+                            control.chapter
+                        )}
+                    </p>
+
+                    <p>
+                        Date :
+                        ${formatDate(
+                            control.date
+                        )}
+                    </p>
+
+                    <p class="days ${className}">
+                        ${
+                            daysLeft === 0
+                                ? "Contrôle aujourd'hui"
+                                : daysLeft === 1
+                                    ? "Contrôle demain"
+                                    : `${daysLeft} jour(s) restant(s)`
+                        }
+                    </p>
+
+                    <p>
+                        Révision :
+                        ${progress}%
+                    </p>
+
+                    <select id="revisionTime${index}">
+
+                        <option value="5">
+                            5 min
+                        </option>
+
+                        <option
+                            value="15"
+                            selected
+                        >
+                            15 min
+                        </option>
+
+                        <option value="30">
+                            30 min
+                        </option>
+
+                        <option value="60">
+                            1 h
+                        </option>
+
+                    </select>
+
+                    <button
+                        class="revise-btn"
+                        onclick="startRevision(${index}, this)"
+                    >
+                        Réviser
+                    </button>
+
+                    <button
+                        class="delete-btn"
+                        onclick="removeControl(${index})"
+                    >
+                        Supprimer
+                    </button>
+
+                </div>
+            `;
         }
-
-        const progress =
-            Number(control.progress) || 0;
-
-        controlsContainer.innerHTML += `
-            <div class="card control">
-
-                <h3>
-                    ${escapeHTML(control.subject)}
-                </h3>
-
-                <p>
-                    Chapitre :
-                    ${escapeHTML(control.chapter)}
-                </p>
-
-                <p>
-                    Date :
-                    ${formatDate(control.date)}
-                </p>
-
-                <p class="days ${className}">
-                    ${
-                        daysLeft === 0
-                            ? "Contrôle aujourd'hui"
-                            : daysLeft === 1
-                                ? "Contrôle demain"
-                                : `${daysLeft} jour(s) restant(s)`
-                    }
-                </p>
-
-                <p>
-                    Révision :
-                    ${progress}%
-                </p>
-
-                <select id="revisionTime${index}">
-                    <option value="5">5 min</option>
-
-                    <option value="15" selected>
-                        15 min
-                    </option>
-
-                    <option value="30">30 min</option>
-
-                    <option value="60">
-                        1 h
-                    </option>
-                </select>
-
-                <button
-                    class="revise-btn"
-                    onclick="startRevision(${index}, this)"
-                >
-                    Réviser
-                </button>
-
-                <button
-                    class="delete-btn"
-                    onclick="removeControl(${index})"
-                >
-                    Supprimer
-                </button>
-
-            </div>
-        `;
-    });
+    );
 }
 
 
@@ -641,39 +1034,58 @@ function render() {
 /* ================================================= */
 
 async function removeControl(index) {
-    const control = controls[index];
+
+    const control =
+        controls[index];
 
     if (!control || !control._id) {
-        alert("Contrôle introuvable.");
+
+        alert(
+            "Contrôle introuvable."
+        );
+
         return;
     }
 
     try {
-        const response = await fetch(
-            "/api/controls/" + control._id,
-            {
-                method: "DELETE",
-                credentials: "include"
-            }
-        );
 
-        const data = await response.json();
+        const response =
+            await fetch(
+                "/api/controls/" +
+                control._id,
+                {
+                    method: "DELETE",
+                    credentials: "include"
+                }
+            );
+
+        const data =
+            await response.json();
 
         if (!response.ok) {
+
             alert(
                 data.error ||
                 "Impossible de supprimer le contrôle."
             );
+
             return;
         }
 
-        controls.splice(index, 1);
+        controls.splice(
+            index,
+            1
+        );
 
         render();
 
     } catch (error) {
+
         console.error(error);
-        alert("Impossible de contacter le serveur.");
+
+        alert(
+            "Impossible de contacter le serveur."
+        );
     }
 }
 
@@ -683,29 +1095,34 @@ async function removeControl(index) {
 /* ================================================= */
 
 async function generateRevisionSheet() {
+
     const resultDiv =
-        document.getElementById("aiResult");
+        document.getElementById(
+            "aiResult"
+        );
 
-    const courseInput =
-        document.getElementById("courseInput");
-
-    if (!resultDiv || !courseInput) {
-        return;
-    }
-
-    const course = courseInput.value;
+    const course =
+        document
+            .getElementById("courseInput")
+            ?.value || "";
 
     if (!course.trim()) {
-        alert("Colle un cours avant de générer une fiche.");
+
+        alert(
+            "Colle un cours avant de générer une fiche."
+        );
+
         return;
     }
 
     if (course.length > 10000) {
+
         resultDiv.innerHTML = `
             <div class="ai-card error">
                 Le cours dépasse 10 000 caractères.
             </div>
         `;
+
         return;
     }
 
@@ -716,44 +1133,53 @@ async function generateRevisionSheet() {
     `;
 
     try {
-        const response = await fetch("/generate", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            credentials: "include",
-            body: JSON.stringify({
-                course
-            })
-        });
 
-        const data = await response.json();
-
-        if (!response.ok) {
-            throw new Error(
-                data.error || "Erreur génération."
-            );
-        }
-
-        const historyResponse = await fetch(
-            "/api/history",
-            {
+        const response =
+            await fetch("/generate", {
                 method: "POST",
                 headers: {
-                    "Content-Type": "application/json"
+                    "Content-Type":
+                        "application/json"
                 },
                 credentials: "include",
                 body: JSON.stringify({
-                    course,
-                    result: data
+                    course
                 })
-            }
-        );
+            });
+
+        const data =
+            await response.json();
+
+        if (!response.ok) {
+
+            throw new Error(
+                data.error ||
+                "Erreur génération."
+            );
+        }
+
+        const historyResponse =
+            await fetch(
+                "/api/history",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+                    credentials: "include",
+                    body: JSON.stringify({
+                        course,
+                        result: data
+                    })
+                }
+            );
 
         const historyData =
             await historyResponse.json();
 
         if (!historyResponse.ok) {
+
             throw new Error(
                 historyData.error ||
                 "Impossible de sauvegarder la fiche."
@@ -761,13 +1187,18 @@ async function generateRevisionSheet() {
         }
 
         if (historyData.history) {
-            history.unshift(historyData.history);
+
+            history.unshift(
+                historyData.history
+            );
         }
 
         renderHistory();
+
         displayRevisionSheet(data);
 
     } catch (error) {
+
         console.error(error);
 
         resultDiv.innerHTML = `
@@ -783,28 +1214,40 @@ async function generateRevisionSheet() {
 
 
 function displayRevisionSheet(data) {
+
     const resultDiv =
-        document.getElementById("aiResult");
+        document.getElementById(
+            "aiResult"
+        );
 
     if (!resultDiv) {
         return;
     }
 
     resultDiv.innerHTML = `
+
         <div class="ai-card">
+
             <h2>Résumé</h2>
 
             <p>
-                ${escapeHTML(data.summary || "")}
+                ${escapeHTML(
+                    data.summary || ""
+                )}
             </p>
+
         </div>
 
         <div class="ai-card">
+
             <h2>Notions clés</h2>
 
             <ul>
+
                 ${
-                    Array.isArray(data.keyPoints)
+                    Array.isArray(
+                        data.keyPoints
+                    )
                         ? data.keyPoints
                             .map(
                                 point =>
@@ -813,21 +1256,30 @@ function displayRevisionSheet(data) {
                             .join("")
                         : ""
                 }
+
             </ul>
+
         </div>
 
         <div class="ai-card">
+
             <h2>Quiz</h2>
 
             ${
                 Array.isArray(data.quiz)
                     ? data.quiz
                         .map(
-                            (question, index) => `
+                            (
+                                question,
+                                index
+                            ) => `
+
                                 <div class="quiz-card">
 
                                     <h3>
-                                        Question ${index + 1}
+                                        Question ${
+                                            index + 1
+                                        }
                                     </h3>
 
                                     <p>
@@ -837,6 +1289,7 @@ function displayRevisionSheet(data) {
                                     </p>
 
                                     <details>
+
                                         <summary>
                                             Voir la réponse
                                         </summary>
@@ -846,6 +1299,7 @@ function displayRevisionSheet(data) {
                                                 question.answer
                                             )}
                                         </p>
+
                                     </details>
 
                                 </div>
@@ -854,6 +1308,7 @@ function displayRevisionSheet(data) {
                         .join("")
                     : ""
             }
+
         </div>
     `;
 }
@@ -864,77 +1319,94 @@ function displayRevisionSheet(data) {
 /* ================================================= */
 
 function renderHistory() {
+
     const historyList =
-        document.getElementById("historyList");
+        document.getElementById(
+            "historyList"
+        );
 
     if (!historyList) {
         return;
     }
 
     const searchInput =
-        document.getElementById("historySearch");
+        document.getElementById(
+            "historySearch"
+        );
 
     const search =
         searchInput
-            ? searchInput.value.toLowerCase().trim()
+            ? searchInput.value
+                .toLowerCase()
+                .trim()
             : "";
 
-    const filtered = history.filter(
-        item =>
-            String(item.course || "")
-                .toLowerCase()
-                .includes(search)
-    );
+    const filtered =
+        history.filter(
+            item =>
+                String(
+                    item.course || ""
+                )
+                    .toLowerCase()
+                    .includes(search)
+        );
 
     historyList.innerHTML = "";
 
-    filtered.forEach(item => {
-        const realIndex = history.indexOf(item);
+    filtered.forEach(
+        item => {
 
-        historyList.innerHTML += `
-            <div class="history-card">
+            const realIndex =
+                history.indexOf(item);
 
-                <div class="history-info">
-                    <strong>
-                        ${escapeHTML(
-                            item.course ||
-                            "Fiche sans nom"
-                        )}
-                    </strong>
+            historyList.innerHTML += `
+
+                <div class="history-card">
+
+                    <div class="history-info">
+
+                        <strong>
+                            ${escapeHTML(
+                                item.course ||
+                                "Fiche sans nom"
+                            )}
+                        </strong>
+
+                    </div>
+
+                    <div class="history-actions">
+
+                        <button
+                            onclick="loadHistory(${realIndex})"
+                        >
+                            Ouvrir
+                        </button>
+
+                        <button
+                            onclick="renameHistory(${realIndex})"
+                        >
+                            Renommer
+                        </button>
+
+                        <button
+                            onclick="shareHistory(${realIndex})"
+                        >
+                            Partager
+                        </button>
+
+                        <button
+                            class="delete-history-btn"
+                            onclick="deleteHistory(${realIndex})"
+                        >
+                            Supprimer
+                        </button>
+
+                    </div>
+
                 </div>
-
-                <div class="history-actions">
-
-                    <button
-                        onclick="loadHistory(${realIndex})"
-                    >
-                        Ouvrir
-                    </button>
-
-                    <button
-                        onclick="renameHistory(${realIndex})"
-                    >
-                        Renommer
-                    </button>
-
-                    <button
-                        onclick="shareHistory(${realIndex})"
-                    >
-                        Partager
-                    </button>
-
-                    <button
-                        class="delete-history-btn"
-                        onclick="deleteHistory(${realIndex})"
-                    >
-                        Supprimer
-                    </button>
-
-                </div>
-
-            </div>
-        `;
-    });
+            `;
+        }
+    );
 }
 
 
@@ -943,19 +1415,30 @@ function renderHistory() {
 /* ================================================= */
 
 function loadHistory(index) {
-    const item = history[index];
+
+    const item =
+        history[index];
 
     if (!item || !item.result) {
-        alert("Fiche introuvable.");
+
+        alert(
+            "Fiche introuvable."
+        );
+
         return;
     }
 
-    displayRevisionSheet(item.result);
+    displayRevisionSheet(
+        item.result
+    );
 
     const resultDiv =
-        document.getElementById("aiResult");
+        document.getElementById(
+            "aiResult"
+        );
 
     if (resultDiv) {
+
         resultDiv.scrollIntoView({
             behavior: "smooth",
             block: "start"
@@ -969,58 +1452,85 @@ function loadHistory(index) {
 /* ================================================= */
 
 async function renameHistory(index) {
-    const item = history[index];
+
+    const item =
+        history[index];
 
     if (!item || !item._id) {
-        alert("Fiche introuvable.");
+
+        alert(
+            "Fiche introuvable."
+        );
+
         return;
     }
 
-    const newName = prompt(
-        "Nouveau nom de la fiche :",
-        item.course
-    );
+    const newName =
+        prompt(
+            "Nouveau nom de la fiche :",
+            item.course
+        );
 
-    if (!newName || !newName.trim()) {
+    if (
+        !newName ||
+        !newName.trim()
+    ) {
         return;
     }
 
     try {
-        const response = await fetch(
-            "/api/history/" + item._id,
-            {
-                method: "PUT",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                credentials: "include",
-                body: JSON.stringify({
-                    course: newName.trim()
-                })
-            }
-        );
 
-        const data = await response.json();
+        const response =
+            await fetch(
+                "/api/history/" +
+                item._id,
+                {
+                    method: "PUT",
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+                    credentials: "include",
+                    body: JSON.stringify({
+                        course:
+                            newName.trim()
+                    })
+                }
+            );
+
+        const data =
+            await response.json();
 
         if (!response.ok) {
+
             alert(
                 data.error ||
                 "Impossible de renommer la fiche."
             );
+
             return;
         }
 
         if (data.history) {
-            history[index] = data.history;
+
+            history[index] =
+                data.history;
+
         } else {
-            history[index].course = newName.trim();
+
+            history[index].course =
+                newName.trim();
         }
 
         renderHistory();
 
     } catch (error) {
+
         console.error(error);
-        alert("Impossible de contacter le serveur.");
+
+        alert(
+            "Impossible de contacter le serveur."
+        );
     }
 }
 
@@ -1030,46 +1540,67 @@ async function renameHistory(index) {
 /* ================================================= */
 
 async function deleteHistory(index) {
-    const item = history[index];
+
+    const item =
+        history[index];
 
     if (!item || !item._id) {
-        alert("Fiche introuvable.");
+
+        alert(
+            "Fiche introuvable."
+        );
+
         return;
     }
 
     const confirmed =
-        confirm("Supprimer cette fiche ?");
+        confirm(
+            "Supprimer cette fiche ?"
+        );
 
     if (!confirmed) {
         return;
     }
 
     try {
-        const response = await fetch(
-            "/api/history/" + item._id,
-            {
-                method: "DELETE",
-                credentials: "include"
-            }
-        );
 
-        const data = await response.json();
+        const response =
+            await fetch(
+                "/api/history/" +
+                item._id,
+                {
+                    method: "DELETE",
+                    credentials: "include"
+                }
+            );
+
+        const data =
+            await response.json();
 
         if (!response.ok) {
+
             alert(
                 data.error ||
                 "Impossible de supprimer la fiche."
             );
+
             return;
         }
 
-        history.splice(index, 1);
+        history.splice(
+            index,
+            1
+        );
 
         renderHistory();
 
     } catch (error) {
+
         console.error(error);
-        alert("Impossible de contacter le serveur.");
+
+        alert(
+            "Impossible de contacter le serveur."
+        );
     }
 }
 
@@ -1079,32 +1610,45 @@ async function deleteHistory(index) {
 /* ================================================= */
 
 async function shareHistory(index) {
-    const item = history[index];
+
+    const item =
+        history[index];
 
     if (!item || !item._id) {
-        alert("Fiche introuvable.");
+
+        alert(
+            "Fiche introuvable."
+        );
+
         return;
     }
 
     try {
-        const response = await fetch("/share", {
-            method: "POST",
-            headers: {
-                "Content-Type": "application/json"
-            },
-            credentials: "include",
-            body: JSON.stringify({
-                historyId: item._id
-            })
-        });
 
-        const data = await response.json();
+        const response =
+            await fetch("/share", {
+                method: "POST",
+                headers: {
+                    "Content-Type":
+                        "application/json"
+                },
+                credentials: "include",
+                body: JSON.stringify({
+                    historyId:
+                        item._id
+                })
+            });
+
+        const data =
+            await response.json();
 
         if (!response.ok) {
+
             alert(
                 data.error ||
                 "Impossible de partager la fiche."
             );
+
             return;
         }
 
@@ -1114,8 +1658,12 @@ async function shareHistory(index) {
         );
 
     } catch (error) {
+
         console.error(error);
-        alert("Impossible de contacter le serveur.");
+
+        alert(
+            "Impossible de contacter le serveur."
+        );
     }
 }
 
@@ -1125,59 +1673,81 @@ async function shareHistory(index) {
 /* ================================================= */
 
 async function importSheet() {
+
     const input =
-        document.getElementById("shareCode");
+        document.getElementById(
+            "shareCode"
+        );
 
     const code =
         input
-            ? input.value.trim().toUpperCase()
+            ? input.value
+                .trim()
+                .toUpperCase()
             : "";
 
     if (!code) {
-        alert("Entre un code.");
+
+        alert(
+            "Entre un code."
+        );
+
         return;
     }
 
     try {
-        const response = await fetch(
-            "/share/" +
-            encodeURIComponent(code),
-            {
-                credentials: "include"
-            }
-        );
 
-        const sheet = await response.json();
+        const response =
+            await fetch(
+                "/share/" +
+                encodeURIComponent(code),
+                {
+                    credentials: "include"
+                }
+            );
+
+        const sheet =
+            await response.json();
 
         if (!response.ok) {
+
             alert(
                 sheet.error ||
                 "Code invalide."
             );
+
             return;
         }
 
         const historyResponse =
-            await fetch("/api/history", {
-                method: "POST",
-                headers: {
-                    "Content-Type": "application/json"
-                },
-                credentials: "include",
-                body: JSON.stringify({
-                    course: sheet.course,
-                    result: sheet.result
-                })
-            });
+            await fetch(
+                "/api/history",
+                {
+                    method: "POST",
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+                    credentials: "include",
+                    body: JSON.stringify({
+                        course:
+                            sheet.course,
+                        result:
+                            sheet.result
+                    })
+                }
+            );
 
         const historyData =
             await historyResponse.json();
 
         if (!historyResponse.ok) {
+
             alert(
                 historyData.error ||
                 "Impossible d'importer la fiche."
             );
+
             return;
         }
 
@@ -1187,11 +1757,17 @@ async function importSheet() {
 
         renderHistory();
 
-        alert("Fiche importée !");
+        alert(
+            "Fiche importée !"
+        );
 
     } catch (error) {
+
         console.error(error);
-        alert("Impossible de contacter le serveur.");
+
+        alert(
+            "Impossible de contacter le serveur."
+        );
     }
 }
 
@@ -1201,18 +1777,28 @@ async function importSheet() {
 /* ================================================= */
 
 async function updateStreak() {
-    const today = new Date();
+
+    const today =
+        new Date();
 
     const todayKey =
-        today.toISOString().slice(0, 10);
+        today
+            .toISOString()
+            .slice(0, 10);
 
     const yesterday =
-        new Date(today.getTime() - 86400000);
+        new Date(
+            today.getTime() -
+            86400000
+        );
 
     const yesterdayKey =
-        yesterday.toISOString().slice(0, 10);
+        yesterday
+            .toISOString()
+            .slice(0, 10);
 
     try {
+
         const meResponse =
             await fetch("/me", {
                 credentials: "include"
@@ -1226,25 +1812,41 @@ async function updateStreak() {
             await meResponse.json();
 
         const lastRevision =
-            me.user?.lastRevisionDate || null;
+            me.user?.lastRevisionDate ||
+            null;
 
-        if (lastRevision === todayKey) {
+        if (
+            lastRevision ===
+            todayKey
+        ) {
             return;
         }
 
-        if (lastRevision === yesterdayKey) {
+        if (
+            lastRevision ===
+            yesterdayKey
+        ) {
+
             streak++;
+
         } else {
+
             streak = 1;
         }
 
-        if (streak > bestStreak) {
-            bestStreak = streak;
+        if (
+            streak >
+            bestStreak
+        ) {
+
+            bestStreak =
+                streak;
         }
 
         await saveStats();
 
     } catch (error) {
+
         console.error(
             "Erreur série :",
             error
@@ -1257,13 +1859,17 @@ async function updateStreak() {
 /*                 CHRONOMÈTRE                       */
 /* ================================================= */
 
-function startRevision(index, button) {
+function startRevision(
+    index,
+    button
+) {
+
     const select =
         document.getElementById(
             `revisionTime${index}`
         );
 
-    if (!select || !button) {
+    if (!select) {
         return;
     }
 
@@ -1276,28 +1882,44 @@ function startRevision(index, button) {
     button.disabled = true;
 
     const interval =
-        setInterval(() => {
-            timeLeft--;
+        setInterval(
+            () => {
 
-            const mins =
-                Math.floor(timeLeft / 60);
+                timeLeft--;
 
-            const secs =
-                String(timeLeft % 60)
-                    .padStart(2, "0");
+                const mins =
+                    Math.floor(
+                        timeLeft / 60
+                    );
 
-            button.textContent =
-                `${mins}:${secs}`;
+                const secs =
+                    String(
+                        timeLeft % 60
+                    ).padStart(
+                        2,
+                        "0"
+                    );
 
-            if (timeLeft <= 0) {
-                clearInterval(interval);
+                button.textContent =
+                    `${mins}:${secs}`;
 
-                revise(
-                    index,
-                    minutes
-                );
-            }
-        }, 1000);
+                if (
+                    timeLeft <= 0
+                ) {
+
+                    clearInterval(
+                        interval
+                    );
+
+                    revise(
+                        index,
+                        minutes
+                    );
+                }
+
+            },
+            1000
+        );
 }
 
 
@@ -1306,12 +1928,28 @@ function startRevision(index, button) {
 /* ================================================= */
 
 function escapeHTML(value) {
+
     return String(value ?? "")
-        .replace(/&/g, "&amp;")
-        .replace(/</g, "&lt;")
-        .replace(/>/g, "&gt;")
-        .replace(/"/g, "&quot;")
-        .replace(/'/g, "&#039;");
+        .replace(
+            /&/g,
+            "&amp;"
+        )
+        .replace(
+            /</g,
+            "&lt;"
+        )
+        .replace(
+            />/g,
+            "&gt;"
+        )
+        .replace(
+            /"/g,
+            "&quot;"
+        )
+        .replace(
+            /'/g,
+            "&#039;"
+        );
 }
 
 
@@ -1320,40 +1958,43 @@ function escapeHTML(value) {
 /* ================================================= */
 
 const profileButton =
-    document.getElementById("profileButton");
+    document.getElementById(
+        "profileButton"
+    );
 
 const profileDropdown =
-    document.getElementById("profileDropdown");
+    document.getElementById(
+        "profileDropdown"
+    );
 
 const settingsButton =
-    document.getElementById("settingsButton");
+    document.getElementById(
+        "settingsButton"
+    );
 
 const logoutButton =
-    document.getElementById("logoutButton");
-
-
-settingsButton?.addEventListener(
-    "click",
-    () => {
-        profileDropdown?.classList.remove("open");
-        openSettings();
-    }
-);
+    document.getElementById(
+        "logoutButton"
+    );
 
 
 profileButton?.addEventListener(
     "click",
-    (event) => {
+    event => {
+
         event.stopPropagation();
 
-        profileDropdown?.classList.toggle("open");
+        profileDropdown?.classList.toggle(
+            "open"
+        );
     }
 );
 
 
 profileDropdown?.addEventListener(
     "click",
-    (event) => {
+    event => {
+
         event.stopPropagation();
     }
 );
@@ -1362,13 +2003,29 @@ profileDropdown?.addEventListener(
 document.addEventListener(
     "click",
     () => {
-        profileDropdown?.classList.remove("open");
+
+        profileDropdown?.classList.remove(
+            "open"
+        );
+    }
+);
+
+
+settingsButton?.addEventListener(
+    "click",
+    () => {
+
+        profileDropdown?.classList.remove(
+            "open"
+        );
+
+        openSettings();
     }
 );
 
 
 /* ================================================= */
-/*                  DÉCONNEXION                      */
+/*                    DÉCONNEXION                    */
 /* ================================================= */
 
 logoutButton?.addEventListener(
@@ -1376,12 +2033,14 @@ logoutButton?.addEventListener(
     async () => {
 
         try {
+
             const response =
                 await fetch(
                     "/logout",
                     {
                         method: "POST",
-                        credentials: "include"
+                        credentials:
+                            "include"
                     }
                 );
 
@@ -1389,34 +2048,48 @@ logoutButton?.addEventListener(
                 await response.json();
 
             if (!response.ok) {
+
                 alert(
                     data.error ||
                     "Impossible de se déconnecter."
                 );
+
                 return;
             }
 
-            profileDropdown?.classList.remove("open");
+            profileDropdown?.classList.remove(
+                "open"
+            );
 
             const app =
-                document.getElementById("app");
+                document.getElementById(
+                    "app"
+                );
 
             const loginScreen =
-                document.getElementById("loginScreen");
+                document.getElementById(
+                    "loginScreen"
+                );
 
             if (app) {
-                app.style.display = "none";
+                app.style.display =
+                    "none";
             }
 
             if (loginScreen) {
-                loginScreen.style.display = "block";
+                loginScreen.style.display =
+                    "block";
             }
 
             const loginEmail =
-                document.getElementById("loginEmail");
+                document.getElementById(
+                    "loginEmail"
+                );
 
             const loginPassword =
-                document.getElementById("loginPassword");
+                document.getElementById(
+                    "loginPassword"
+                );
 
             if (loginEmail) {
                 loginEmail.value = "";
@@ -1431,6 +2104,7 @@ logoutButton?.addEventListener(
             showLogin();
 
         } catch (error) {
+
             console.error(
                 "Erreur déconnexion :",
                 error
@@ -1445,119 +2119,15 @@ logoutButton?.addEventListener(
 
 
 /* ================================================= */
-/*                  INITIALISATION                   */
-/* ================================================= */
-
-window.addEventListener(
-    "load",
-    async () => {
-
-        /* Charger immédiatement le thème */
-        loadTheme();
-
-        /*
-         * On attend la fin de l'intro avant
-         * de vérifier la session.
-         */
-        try {
-            const response =
-                await fetch("/me", {
-                    credentials: "include"
-                });
-
-            const data =
-                await response.json();
-
-            if (data.loggedIn) {
-
-                currentUser =
-                    data.user || null;
-
-                const loginScreen =
-                    document.getElementById(
-                        "loginScreen"
-                    );
-
-                if (loginScreen) {
-                    loginScreen.style.display =
-                        "none";
-                }
-
-                await startAccountExperience();
-
-                return;
-            }
-
-            const intro =
-                document.getElementById("intro");
-
-            const onboarding =
-                document.getElementById("onboarding");
-
-            const success =
-                document.getElementById("success");
-
-            const app =
-                document.getElementById("app");
-
-            if (onboarding) {
-                onboarding.classList.add("hidden");
-            }
-
-            if (success) {
-                success.classList.add("hidden");
-            }
-
-            if (app) {
-                app.style.display = "none";
-            }
-
-            const loginScreen =
-                document.getElementById("loginScreen");
-
-            /*
-             * L'intro est volontairement laissée
-             * visible ici.
-             */
-            if (intro) {
-                intro.classList.remove("hidden");
-            }
-
-            /*
-             * L'écran de connexion sera affiché
-             * après l'intro par showIntro().
-             */
-            if (loginScreen) {
-                loginScreen.style.display = "none";
-            }
-
-            showIntro();
-
-        } catch (error) {
-            console.error(
-                "Erreur vérification session :",
-                error
-            );
-
-            /*
-             * Même en cas d'erreur serveur,
-             * on ne fait pas disparaître l'intro
-             * brutalement.
-             */
-            showIntro();
-        }
-    }
-);
-
-
-/* ================================================= */
-/*                    PARAMÈTRES                     */
+/*                PARAMÈTRES                         */
 /* ================================================= */
 
 function openSettings() {
 
     const settingsPage =
-        document.getElementById("settingsPage");
+        document.getElementById(
+            "settingsPage"
+        );
 
     const profileMenu =
         document.querySelector(
@@ -1565,21 +2135,26 @@ function openSettings() {
         );
 
     const container =
-        document.querySelector(".container");
+        document.querySelector(
+            ".container"
+        );
 
     if (!settingsPage) {
         return;
     }
 
     if (profileMenu) {
-        profileMenu.style.display = "none";
+        profileMenu.style.display =
+            "none";
     }
 
     if (container) {
-        container.style.display = "none";
+        container.style.display =
+            "none";
     }
 
-    settingsPage.style.display = "block";
+    settingsPage.style.display =
+        "block";
 
     loadSettings();
 }
@@ -1588,7 +2163,9 @@ function openSettings() {
 function closeSettings() {
 
     const settingsPage =
-        document.getElementById("settingsPage");
+        document.getElementById(
+            "settingsPage"
+        );
 
     const profileMenu =
         document.querySelector(
@@ -1596,38 +2173,45 @@ function closeSettings() {
         );
 
     const container =
-        document.querySelector(".container");
+        document.querySelector(
+            ".container"
+        );
 
     if (!settingsPage) {
         return;
     }
 
-    settingsPage.style.display = "none";
+    settingsPage.style.display =
+        "none";
 
     if (profileMenu) {
-        profileMenu.style.display = "block";
+        profileMenu.style.display =
+            "block";
     }
 
     if (container) {
-        container.style.display = "block";
+        container.style.display =
+            "block";
     }
 }
 
 
-/* ================================================= */
-/*                CHARGER PARAMÈTRES                 */
-/* ================================================= */
-
 async function loadSettings() {
 
     const usernameElement =
-        document.getElementById("settingsUsername");
+        document.getElementById(
+            "settingsUsername"
+        );
 
     const emailElement =
-        document.getElementById("settingsEmail");
+        document.getElementById(
+            "settingsEmail"
+        );
 
     const themeSelect =
-        document.getElementById("themeSelect");
+        document.getElementById(
+            "themeSelect"
+        );
 
     try {
 
@@ -1637,6 +2221,7 @@ async function loadSettings() {
             });
 
         if (!response.ok) {
+
             throw new Error(
                 "Impossible de récupérer le profil."
             );
@@ -1645,19 +2230,25 @@ async function loadSettings() {
         const data =
             await response.json();
 
-        if (!data.loggedIn || !data.user) {
+        if (
+            !data.loggedIn ||
+            !data.user
+        ) {
             return;
         }
 
-        currentUser = data.user;
+        currentUser =
+            data.user;
 
         if (usernameElement) {
+
             usernameElement.textContent =
                 currentUser.username ||
                 "Non renseigné";
         }
 
         if (emailElement) {
+
             emailElement.textContent =
                 currentUser.email ||
                 "Non renseigné";
@@ -1671,11 +2262,13 @@ async function loadSettings() {
         );
 
         if (usernameElement) {
+
             usernameElement.textContent =
                 "Impossible de charger";
         }
 
         if (emailElement) {
+
             emailElement.textContent =
                 "Impossible de charger";
         }
@@ -1687,7 +2280,8 @@ async function loadSettings() {
         ) || "light";
 
     if (themeSelect) {
-        themeSelect.value = savedTheme;
+        themeSelect.value =
+            savedTheme;
     }
 
     applyTheme(savedTheme);
@@ -1695,7 +2289,7 @@ async function loadSettings() {
 
 
 /* ================================================= */
-/*                MODIFIER LE PSEUDO                 */
+/*                 MODIFIER PSEUDO                   */
 /* ================================================= */
 
 async function editUsername() {
@@ -1718,16 +2312,20 @@ async function editUsername() {
         newUsername.trim();
 
     if (username.length < 2) {
+
         alert(
             "Le pseudo doit contenir au moins 2 caractères."
         );
+
         return;
     }
 
     if (username.length > 30) {
+
         alert(
             "Le pseudo ne peut pas dépasser 30 caractères."
         );
+
         return;
     }
 
@@ -1738,14 +2336,11 @@ async function editUsername() {
                 "/api/account/username",
                 {
                     method: "PUT",
-
                     headers: {
                         "Content-Type":
                             "application/json"
                     },
-
                     credentials: "include",
-
                     body: JSON.stringify({
                         username
                     })
@@ -1756,10 +2351,12 @@ async function editUsername() {
             await response.json();
 
         if (!response.ok) {
+
             alert(
                 data.error ||
                 "Impossible de modifier le pseudo."
             );
+
             return;
         }
 
@@ -1772,6 +2369,7 @@ async function editUsername() {
             );
 
         if (usernameElement) {
+
             usernameElement.textContent =
                 username;
         }
@@ -1807,9 +2405,11 @@ async function changePassword() {
     }
 
     if (newPassword.length < 6) {
+
         alert(
             "Le mot de passe doit contenir au moins 6 caractères."
         );
+
         return;
     }
 
@@ -1822,10 +2422,15 @@ async function changePassword() {
         return;
     }
 
-    if (newPassword !== confirmation) {
+    if (
+        newPassword !==
+        confirmation
+    ) {
+
         alert(
             "Les mots de passe ne correspondent pas."
         );
+
         return;
     }
 
@@ -1836,14 +2441,11 @@ async function changePassword() {
                 "/api/account/password",
                 {
                     method: "PUT",
-
                     headers: {
                         "Content-Type":
                             "application/json"
                     },
-
                     credentials: "include",
-
                     body: JSON.stringify({
                         password:
                             newPassword
@@ -1855,10 +2457,12 @@ async function changePassword() {
             await response.json();
 
         if (!response.ok) {
+
             alert(
                 data.error ||
                 "Impossible de modifier le mot de passe."
             );
+
             return;
         }
 
@@ -1878,133 +2482,7 @@ async function changePassword() {
 
 
 /* ================================================= */
-/*                 CHANGER LE THÈME                  */
-/* ================================================= */
-
-function changeTheme() {
-
-    const themeSelect =
-        document.getElementById("themeSelect");
-
-    if (!themeSelect) {
-        return;
-    }
-
-    const theme =
-        themeSelect.value;
-
-    localStorage.setItem(
-        "capControleTheme",
-        theme
-    );
-
-    applyTheme(theme);
-}
-
-
-/* ================================================= */
-/*                 APPLIQUER LE THÈME                */
-/* ================================================= */
-
-function applyTheme(theme) {
-
-    const isDark =
-        theme === "dark";
-
-    document.body.classList.toggle(
-        "dark-theme",
-        isDark
-    );
-
-    /*
-     * Ces variables permettent aussi au thème
-     * de fonctionner sur les éléments qui utilisent
-     * les variables CSS.
-     */
-    if (isDark) {
-
-        document.documentElement.style.setProperty(
-            "--background",
-            "#0f172a"
-        );
-
-        document.documentElement.style.setProperty(
-            "--card",
-            "#1e293b"
-        );
-
-        document.documentElement.style.setProperty(
-            "--text",
-            "#f8fafc"
-        );
-
-        document.documentElement.style.setProperty(
-            "--muted",
-            "#94a3b8"
-        );
-
-        document.documentElement.style.setProperty(
-            "--border",
-            "#334155"
-        );
-
-    } else {
-
-        document.documentElement.style.setProperty(
-            "--background",
-            "#f8fafc"
-        );
-
-        document.documentElement.style.setProperty(
-            "--card",
-            "#ffffff"
-        );
-
-        document.documentElement.style.setProperty(
-            "--text",
-            "#111827"
-        );
-
-        document.documentElement.style.setProperty(
-            "--muted",
-            "#6b7280"
-        );
-
-        document.documentElement.style.setProperty(
-            "--border",
-            "#e5e7eb"
-        );
-    }
-}
-
-
-/* ================================================= */
-/*                 CHARGER LE THÈME                  */
-/* ================================================= */
-
-function loadTheme() {
-
-    const savedTheme =
-        localStorage.getItem(
-            "capControleTheme"
-        ) || "light";
-
-    applyTheme(savedTheme);
-
-    const themeSelect =
-        document.getElementById(
-            "themeSelect"
-        );
-
-    if (themeSelect) {
-        themeSelect.value =
-            savedTheme;
-    }
-}
-
-
-/* ================================================= */
-/*                SUPPRIMER LE COMPTE                */
+/*                SUPPRIMER COMPTE                   */
 /* ================================================= */
 
 async function deleteAccount() {
@@ -2028,9 +2506,11 @@ async function deleteAccount() {
         secondConfirmation !==
         "SUPPRIMER"
     ) {
+
         alert(
             "Suppression annulée."
         );
+
         return;
     }
 
@@ -2049,10 +2529,12 @@ async function deleteAccount() {
             await response.json();
 
         if (!response.ok) {
+
             alert(
                 data.error ||
                 "Impossible de supprimer le compte."
             );
+
             return;
         }
 
@@ -2062,30 +2544,17 @@ async function deleteAccount() {
 
         currentUser = null;
 
-        const app =
-            document.getElementById("app");
+        document.getElementById(
+            "app"
+        ).style.display = "none";
 
-        const settingsPage =
-            document.getElementById(
-                "settingsPage"
-            );
+        document.getElementById(
+            "settingsPage"
+        ).style.display = "none";
 
-        const loginScreen =
-            document.getElementById(
-                "loginScreen"
-            );
-
-        if (app) {
-            app.style.display = "none";
-        }
-
-        if (settingsPage) {
-            settingsPage.style.display = "none";
-        }
-
-        if (loginScreen) {
-            loginScreen.style.display = "block";
-        }
+        document.getElementById(
+            "loginScreen"
+        ).style.display = "block";
 
         showLogin();
 
@@ -2125,8 +2594,12 @@ const onboardingData = {
 function getOnboardingKey() {
 
     if (currentUser?.email) {
-        return "capControleOnboarding_" +
-            currentUser.email.toLowerCase();
+
+        return (
+            "capControleOnboarding_" +
+            currentUser.email
+                .toLowerCase()
+        );
     }
 
     return "capControleOnboarding";
@@ -2135,9 +2608,11 @@ function getOnboardingKey() {
 
 function hasCompletedOnboarding() {
 
-    return localStorage.getItem(
-        getOnboardingKey()
-    ) === "true";
+    return (
+        localStorage.getItem(
+            getOnboardingKey()
+        ) === "true"
+    );
 }
 
 
@@ -2149,8 +2624,11 @@ function saveOnboarding() {
     );
 
     localStorage.setItem(
-        getOnboardingKey() + "_data",
-        JSON.stringify(onboardingData)
+        getOnboardingKey() +
+        "_data",
+        JSON.stringify(
+            onboardingData
+        )
     );
 }
 
@@ -2161,7 +2639,8 @@ function loadOnboardingData() {
 
         const saved =
             localStorage.getItem(
-                getOnboardingKey() + "_data"
+                getOnboardingKey() +
+                "_data"
             );
 
         if (!saved) {
@@ -2175,6 +2654,7 @@ function loadOnboardingData() {
             data &&
             typeof data === "object"
         ) {
+
             Object.assign(
                 onboardingData,
                 data
@@ -2198,108 +2678,129 @@ function loadOnboardingData() {
 function showIntro() {
 
     const intro =
-        document.getElementById("intro");
+        document.getElementById(
+            "intro"
+        );
 
     const onboarding =
-        document.getElementById("onboarding");
+        document.getElementById(
+            "onboarding"
+        );
 
     const success =
-        document.getElementById("success");
-
-    const loginScreen =
-        document.getElementById("loginScreen");
+        document.getElementById(
+            "success"
+        );
 
     const app =
-        document.getElementById("app");
+        document.getElementById(
+            "app"
+        );
+
+    if (app) {
+        app.style.display =
+            "none";
+    }
 
     if (intro) {
-        intro.classList.remove("hidden");
-        intro.style.display = "flex";
+        intro.classList.remove(
+            "hidden"
+        );
+        intro.style.display =
+            "flex";
     }
 
     if (onboarding) {
-        onboarding.classList.add("hidden");
+        onboarding.classList.add(
+            "hidden"
+        );
     }
 
     if (success) {
-        success.classList.add("hidden");
-    }
-
-    if (app) {
-        app.style.display = "none";
-    }
-
-    if (loginScreen) {
-        loginScreen.style.display = "none";
+        success.classList.add(
+            "hidden"
+        );
     }
 
     /*
      * IMPORTANT :
-     * 2200 ms = durée de la barre de chargement.
-     * L'intro ne disparaît donc plus avant la fin.
+     * On attend un peu plus longtemps
+     * que l'animation de la barre.
      */
-    setTimeout(() => {
+    setTimeout(
+        () => {
 
-        if (intro) {
-            intro.classList.add("hidden");
-            intro.style.display = "none";
-        }
+            if (intro) {
+                intro.classList.add(
+                    "hidden"
+                );
+            }
 
-        if (currentUser) {
+            if (onboarding) {
 
-            if (hasCompletedOnboarding()) {
-                showApp();
-            } else {
-                if (onboarding) {
-                    onboarding.classList.remove("hidden");
-                }
+                onboarding.classList.remove(
+                    "hidden"
+                );
 
                 onboardingStep = 1;
+
                 updateOnboarding();
             }
 
-        } else {
-
-            if (loginScreen) {
-                loginScreen.style.display = "block";
-            }
-        }
-
-    }, 2200);
+        },
+        2200
+    );
 }
 
 
 function showSuccess() {
 
     const onboarding =
-        document.getElementById("onboarding");
+        document.getElementById(
+            "onboarding"
+        );
 
     const success =
-        document.getElementById("success");
+        document.getElementById(
+            "success"
+        );
 
     if (onboarding) {
-        onboarding.classList.add("hidden");
+        onboarding.classList.add(
+            "hidden"
+        );
     }
 
     if (success) {
-        success.classList.remove("hidden");
+        success.classList.remove(
+            "hidden"
+        );
     }
 
     const summary =
-        document.getElementById("profileSummary");
+        document.getElementById(
+            "profileSummary"
+        );
 
     if (!summary) {
         return;
     }
 
     summary.innerHTML = `
-        <strong>Ton profil</strong><br><br>
+
+        <strong>
+            Ton profil
+        </strong>
+
+        <br><br>
 
         🎓 ${
             onboardingData.role === "eleve"
                 ? "Élève"
                 : "Professeur"
-        }<br>
+        }
+
+        <br>
 
         ${
             onboardingData.class
@@ -2317,22 +2818,27 @@ function showSuccess() {
                   onboardingData.subjects
                     .map(
                         subject =>
-                            escapeHTML(subject)
+                            escapeHTML(
+                                subject
+                            )
                     )
                     .join(", ") +
                   "<br>"
                 : ""
         }
 
-        🎯 Objectif : ${
+        🎯 Objectif :
+        ${
             getObjectiveLabel(
                 onboardingData.objective
             )
-        }<br>
+        }
 
-        ⏱️ Temps disponible : ${
-            escapeHTML(onboardingData.time)
-        } min
+        <br>
+
+        ⏱️ Temps disponible :
+        ${onboardingData.time}
+        min
     `;
 }
 
@@ -2340,39 +2846,56 @@ function showSuccess() {
 function showApp() {
 
     const intro =
-        document.getElementById("intro");
+        document.getElementById(
+            "intro"
+        );
 
     const onboarding =
-        document.getElementById("onboarding");
+        document.getElementById(
+            "onboarding"
+        );
 
     const success =
-        document.getElementById("success");
+        document.getElementById(
+            "success"
+        );
 
     const loginScreen =
-        document.getElementById("loginScreen");
+        document.getElementById(
+            "loginScreen"
+        );
 
     const app =
-        document.getElementById("app");
+        document.getElementById(
+            "app"
+        );
 
     if (intro) {
-        intro.classList.add("hidden");
-        intro.style.display = "none";
+        intro.classList.add(
+            "hidden"
+        );
     }
 
     if (onboarding) {
-        onboarding.classList.add("hidden");
+        onboarding.classList.add(
+            "hidden"
+        );
     }
 
     if (success) {
-        success.classList.add("hidden");
+        success.classList.add(
+            "hidden"
+        );
     }
 
     if (loginScreen) {
-        loginScreen.style.display = "none";
+        loginScreen.style.display =
+            "none";
     }
 
     if (app) {
-        app.style.display = "block";
+        app.style.display =
+            "block";
     }
 }
 
@@ -2388,18 +2911,21 @@ function updateOnboarding() {
             "#steps .step"
         );
 
-    steps.forEach(step => {
+    steps.forEach(
+        step => {
 
-        const stepNumber =
-            Number(
-                step.dataset.step
+            const stepNumber =
+                Number(
+                    step.dataset.step
+                );
+
+            step.classList.toggle(
+                "active",
+                stepNumber ===
+                onboardingStep
             );
-
-        step.classList.toggle(
-            "active",
-            stepNumber === onboardingStep
-        );
-    });
+        }
+    );
 
     const progressBar =
         document.getElementById(
@@ -2414,9 +2940,11 @@ function updateOnboarding() {
     if (progressBar) {
 
         progressBar.style.width =
-            `${(
-                onboardingStep / 6
-            ) * 100}%`;
+            `${
+                (
+                    onboardingStep / 6
+                ) * 100
+            }%`;
     }
 
     if (stepNumber) {
@@ -2469,13 +2997,17 @@ function updateContinueButton() {
 
         case 4:
             valid =
-                onboardingData.subjects.length > 0;
+                onboardingData.subjects
+                    .length > 0;
             break;
 
         case 5:
             valid =
                 onboardingData.objective !== null;
             break;
+
+        default:
+            valid = true;
     }
 
     button.classList.toggle(
@@ -2483,21 +3015,26 @@ function updateContinueButton() {
         !valid
     );
 
-    button.disabled = !valid;
+    button.disabled =
+        !valid;
 }
 
 
 /* ================================================= */
-/*                BOUTON RETOUR                      */
+/*                  BOUTON RETOUR                    */
 /* ================================================= */
 
 document
-    .getElementById("backButton")
+    .getElementById(
+        "backButton"
+    )
     ?.addEventListener(
         "click",
         () => {
 
-            if (onboardingStep <= 1) {
+            if (
+                onboardingStep <= 1
+            ) {
                 return;
             }
 
@@ -2513,71 +3050,77 @@ document
 /* ================================================= */
 
 document
-    .querySelectorAll(".next-button")
-    .forEach(button => {
+    .querySelectorAll(
+        ".next-button"
+    )
+    .forEach(
+        button => {
 
-        button.addEventListener(
-            "click",
-            () => {
+            button.addEventListener(
+                "click",
+                () => {
 
-                if (
-                    button.disabled ||
-                    button.classList.contains(
-                        "disabled"
-                    )
-                ) {
-                    return;
+                    if (
+                        button.disabled ||
+                        button.classList.contains(
+                            "disabled"
+                        )
+                    ) {
+                        return;
+                    }
+
+                    if (
+                        onboardingStep < 6
+                    ) {
+
+                        onboardingStep++;
+
+                        updateOnboarding();
+                    }
                 }
-
-                if (
-                    onboardingStep < 6
-                ) {
-
-                    onboardingStep++;
-
-                    updateOnboarding();
-                }
-            }
-        );
-    });
+            );
+        }
+    );
 
 
 /* ================================================= */
-/*                   RÔLE                            */
+/*                    RÔLE                           */
 /* ================================================= */
 
 document
     .querySelectorAll(
         ".choice-card"
     )
-    .forEach(card => {
+    .forEach(
+        card => {
 
-        card.addEventListener(
-            "click",
-            () => {
+            card.addEventListener(
+                "click",
+                () => {
 
-                document
-                    .querySelectorAll(
-                        ".choice-card"
-                    )
-                    .forEach(
-                        element =>
-                            element.classList.remove(
-                                "selected"
-                            )
+                    document
+                        .querySelectorAll(
+                            ".choice-card"
+                        )
+                        .forEach(
+                            element =>
+                                element.classList.remove(
+                                    "selected"
+                                )
+                        );
+
+                    card.classList.add(
+                        "selected"
                     );
 
-                card.classList.add(
-                    "selected"
-                );
+                    onboardingData.role =
+                        card.dataset.value;
 
-                onboardingData.role =
-                    card.dataset.value;
-
-                updateContinueButton();
-            }
-        );
-    });
+                    updateContinueButton();
+                }
+            );
+        }
+    );
 
 
 /* ================================================= */
@@ -2588,34 +3131,36 @@ document
     .querySelectorAll(
         ".small-choice"
     )
-    .forEach(button => {
+    .forEach(
+        button => {
 
-        button.addEventListener(
-            "click",
-            () => {
+            button.addEventListener(
+                "click",
+                () => {
 
-                document
-                    .querySelectorAll(
-                        ".small-choice"
-                    )
-                    .forEach(
-                        element =>
-                            element.classList.remove(
-                                "selected"
-                            )
+                    document
+                        .querySelectorAll(
+                            ".small-choice"
+                        )
+                        .forEach(
+                            element =>
+                                element.classList.remove(
+                                    "selected"
+                                )
+                        );
+
+                    button.classList.add(
+                        "selected"
                     );
 
-                button.classList.add(
-                    "selected"
-                );
+                    onboardingData.class =
+                        button.dataset.value;
 
-                onboardingData.class =
-                    button.dataset.value;
-
-                updateContinueButton();
-            }
-        );
-    });
+                    updateContinueButton();
+                }
+            );
+        }
+    );
 
 
 /* ================================================= */
@@ -2626,42 +3171,44 @@ document
     .querySelectorAll(
         ".subject"
     )
-    .forEach(button => {
+    .forEach(
+        button => {
 
-        button.addEventListener(
-            "click",
-            () => {
+            button.addEventListener(
+                "click",
+                () => {
 
-                const value =
-                    button.dataset.value;
+                    const value =
+                        button.dataset.value;
 
-                button.classList.toggle(
-                    "selected"
-                );
-
-                if (
-                    onboardingData.subjects
-                        .includes(value)
-                ) {
-
-                    onboardingData.subjects =
-                        onboardingData.subjects
-                            .filter(
-                                subject =>
-                                    subject !== value
-                            );
-
-                } else {
-
-                    onboardingData.subjects.push(
-                        value
+                    button.classList.toggle(
+                        "selected"
                     );
-                }
 
-                updateContinueButton();
-            }
-        );
-    });
+                    if (
+                        onboardingData.subjects
+                            .includes(value)
+                    ) {
+
+                        onboardingData.subjects =
+                            onboardingData.subjects
+                                .filter(
+                                    subject =>
+                                        subject !==
+                                        value
+                                );
+
+                    } else {
+
+                        onboardingData.subjects
+                            .push(value);
+                    }
+
+                    updateContinueButton();
+                }
+            );
+        }
+    );
 
 
 /* ================================================= */
@@ -2672,34 +3219,36 @@ document
     .querySelectorAll(
         ".objective"
     )
-    .forEach(button => {
+    .forEach(
+        button => {
 
-        button.addEventListener(
-            "click",
-            () => {
+            button.addEventListener(
+                "click",
+                () => {
 
-                document
-                    .querySelectorAll(
-                        ".objective"
-                    )
-                    .forEach(
-                        element =>
-                            element.classList.remove(
-                                "selected"
-                            )
+                    document
+                        .querySelectorAll(
+                            ".objective"
+                        )
+                        .forEach(
+                            element =>
+                                element.classList.remove(
+                                    "selected"
+                                )
+                        );
+
+                    button.classList.add(
+                        "selected"
                     );
 
-                button.classList.add(
-                    "selected"
-                );
+                    onboardingData.objective =
+                        button.dataset.value;
 
-                onboardingData.objective =
-                    button.dataset.value;
-
-                updateContinueButton();
-            }
-        );
-    });
+                    updateContinueButton();
+                }
+            );
+        }
+    );
 
 
 /* ================================================= */
@@ -2710,51 +3259,53 @@ document
     .querySelectorAll(
         ".time-choice"
     )
-    .forEach(button => {
+    .forEach(
+        button => {
 
-        button.addEventListener(
-            "click",
-            () => {
+            button.addEventListener(
+                "click",
+                () => {
 
-                document
-                    .querySelectorAll(
-                        ".time-choice"
-                    )
-                    .forEach(
-                        element =>
-                            element.classList.remove(
-                                "selected"
-                            )
+                    document
+                        .querySelectorAll(
+                            ".time-choice"
+                        )
+                        .forEach(
+                            element =>
+                                element.classList.remove(
+                                    "selected"
+                                )
+                        );
+
+                    button.classList.add(
+                        "selected"
                     );
 
-                button.classList.add(
-                    "selected"
-                );
+                    onboardingData.time =
+                        button.dataset.value;
 
-                onboardingData.time =
-                    button.dataset.value;
+                    const finishButton =
+                        document.getElementById(
+                            "finishButton"
+                        );
 
-                const finishButton =
-                    document.getElementById(
-                        "finishButton"
-                    );
+                    if (finishButton) {
 
-                if (finishButton) {
+                        finishButton.classList.remove(
+                            "disabled"
+                        );
 
-                    finishButton.classList.remove(
-                        "disabled"
-                    );
-
-                    finishButton.disabled =
-                        false;
+                        finishButton.disabled =
+                            false;
+                    }
                 }
-            }
-        );
-    });
+            );
+        }
+    );
 
 
 /* ================================================= */
-/*                 OBJECTIFS LABELS                  */
+/*                OBJECTIFS LABELS                   */
 /* ================================================= */
 
 function getObjectiveLabel(value) {
@@ -2778,7 +3329,8 @@ function getObjectiveLabel(value) {
     };
 
     return escapeHTML(
-        labels[value] || "Non renseigné"
+        labels[value] ||
+        "Non renseigné"
     );
 }
 
@@ -2788,7 +3340,9 @@ function getObjectiveLabel(value) {
 /* ================================================= */
 
 document
-    .getElementById("finishButton")
+    .getElementById(
+        "finishButton"
+    )
     ?.addEventListener(
         "click",
         async () => {
@@ -2812,41 +3366,62 @@ document
     );
 
 
+/*
+ * Ton HTML appelle également :
+ *
+ * onclick="completeOnboarding()"
+ *
+ * Cette fonction manquait dans ton ancien JS.
+ */
+
+async function completeOnboarding() {
+
+    saveOnboarding();
+
+    showApp();
+
+    await loadControls();
+    await loadAccountData();
+}
+
+
 /* ================================================= */
 /*              DÉCOUVRIR APPLICATION                */
 /* ================================================= */
 
 document
-    .getElementById("discoverButton")
+    .getElementById(
+        "discoverButton"
+    )
     ?.addEventListener(
         "click",
-        async (event) => {
+        async event => {
 
             /*
-             * Empêche un éventuel onclick="completeOnboarding()"
-             * dans le HTML de provoquer une erreur.
+             * Empêche le onclick du HTML
+             * et l'event listener de faire
+             * deux fois la même chose.
              */
             if (event) {
                 event.preventDefault();
             }
 
-            showApp();
-
-            await loadControls();
-            await loadAccountData();
+            await completeOnboarding();
         }
     );
 
 
 /* ================================================= */
-/*          DÉMARRER ONBOARDING POUR COMPTE          */
+/*          DÉMARRER EXPÉRIENCE COMPTE              */
 /* ================================================= */
 
 async function startAccountExperience() {
 
     loadOnboardingData();
 
-    if (hasCompletedOnboarding()) {
+    if (
+        hasCompletedOnboarding()
+    ) {
 
         showApp();
 
@@ -2858,3 +3433,132 @@ async function startAccountExperience() {
 
     showIntro();
 }
+
+
+/* ================================================= */
+/*                 INITIALISATION                    */
+/* ================================================= */
+
+window.addEventListener(
+    "load",
+    async () => {
+
+        loadTheme();
+
+        try {
+
+            const response =
+                await fetch("/me", {
+                    credentials: "include"
+                });
+
+            const data =
+                await response.json();
+
+            /* ========================= */
+            /* UTILISATEUR CONNECTÉ       */
+            /* ========================= */
+
+            if (data.loggedIn) {
+
+                currentUser =
+                    data.user || null;
+
+                const loginScreen =
+                    document.getElementById(
+                        "loginScreen"
+                    );
+
+                if (loginScreen) {
+                    loginScreen.style.display =
+                        "none";
+                }
+
+                await startAccountExperience();
+
+                return;
+            }
+
+
+            /* ========================= */
+            /* PAS CONNECTÉ               */
+            /* ========================= */
+
+            const intro =
+                document.getElementById(
+                    "intro"
+                );
+
+            const onboarding =
+                document.getElementById(
+                    "onboarding"
+                );
+
+            const success =
+                document.getElementById(
+                    "success"
+                );
+
+            const app =
+                document.getElementById(
+                    "app"
+                );
+
+            if (intro) {
+                intro.classList.add(
+                    "hidden"
+                );
+            }
+
+            if (onboarding) {
+                onboarding.classList.add(
+                    "hidden"
+                );
+            }
+
+            if (success) {
+                success.classList.add(
+                    "hidden"
+                );
+            }
+
+            if (app) {
+                app.style.display =
+                    "none";
+            }
+
+            const loginScreen =
+                document.getElementById(
+                    "loginScreen"
+                );
+
+            if (loginScreen) {
+                loginScreen.style.display =
+                    "block";
+            }
+
+        } catch (error) {
+
+            console.error(
+                "Erreur vérification session :",
+                error
+            );
+
+            /*
+             * Si /me plante, on affiche quand même
+             * l'écran de connexion plutôt que
+             * de laisser une page vide.
+             */
+
+            const loginScreen =
+                document.getElementById(
+                    "loginScreen"
+                );
+
+            if (loginScreen) {
+                loginScreen.style.display =
+                    "block";
+            }
+        }
+    }
+);
