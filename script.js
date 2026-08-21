@@ -5,9 +5,7 @@ let controls = [];
 let history = [];
 
 let currentUser = null;
-
-const controlsContainer =
-    document.getElementById("controls");
+let controlsContainer = null;
 
 
 /* ================================================= */
@@ -16,54 +14,191 @@ const controlsContainer =
 
 function applyTheme(theme) {
 
-    if (theme === "dark") {
+    const root = document.documentElement;
+
+    const dark = theme === "dark";
+
+    if (dark) {
+
         document.body.classList.add("dark-theme");
-        document.documentElement.style.setProperty(
-            "--background",
-            "#0f172a"
-        );
-        document.documentElement.style.setProperty(
-            "--card",
-            "#1e293b"
-        );
-        document.documentElement.style.setProperty(
-            "--text",
-            "#f8fafc"
-        );
-        document.documentElement.style.setProperty(
-            "--muted",
-            "#94a3b8"
-        );
-        document.documentElement.style.setProperty(
-            "--border",
-            "#334155"
-        );
+
+        root.style.setProperty("--background", "#0f172a");
+        root.style.setProperty("--card", "#1e293b");
+        root.style.setProperty("--text", "#f8fafc");
+        root.style.setProperty("--muted", "#94a3b8");
+        root.style.setProperty("--border", "#334155");
 
     } else {
 
         document.body.classList.remove("dark-theme");
 
-        document.documentElement.style.setProperty(
-            "--background",
-            "#f8fafc"
-        );
-        document.documentElement.style.setProperty(
-            "--card",
-            "#ffffff"
-        );
-        document.documentElement.style.setProperty(
-            "--text",
-            "#111827"
-        );
-        document.documentElement.style.setProperty(
-            "--muted",
-            "#6b7280"
-        );
-        document.documentElement.style.setProperty(
-            "--border",
-            "#e5e7eb"
-        );
+        root.style.setProperty("--background", "#f8fafc");
+        root.style.setProperty("--card", "#ffffff");
+        root.style.setProperty("--text", "#111827");
+        root.style.setProperty("--muted", "#6b7280");
+        root.style.setProperty("--border", "#e5e7eb");
     }
+
+    applyDarkModeFixes(dark);
+
+    const themeSelect =
+        document.getElementById("themeSelect");
+
+    if (themeSelect) {
+        themeSelect.value = dark ? "dark" : "light";
+    }
+}
+
+
+/*
+ * Ton CSS contient plusieurs éléments avec
+ * background: white / #ffffff en dur.
+ *
+ * Ces règles permettent donc au mode sombre
+ * de fonctionner même sans modifier ton CSS.
+ */
+function applyDarkModeFixes(dark) {
+
+    let style =
+        document.getElementById("capControleDarkModeStyle");
+
+    if (!style) {
+
+        style = document.createElement("style");
+
+        style.id =
+            "capControleDarkModeStyle";
+
+        document.head.appendChild(style);
+    }
+
+    if (!dark) {
+
+        style.textContent = "";
+
+        return;
+    }
+
+    style.textContent = `
+
+        body.dark-theme {
+            background: #0f172a !important;
+            color: #f8fafc !important;
+        }
+
+        body.dark-theme .screen {
+            background: #0f172a !important;
+            color: #f8fafc !important;
+        }
+
+        body.dark-theme .intro-screen {
+            background: #0f172a !important;
+            color: #f8fafc !important;
+        }
+
+        body.dark-theme .onboarding {
+            background: #0f172a !important;
+        }
+
+        body.dark-theme .choice-card,
+        body.dark-theme .small-choice,
+        body.dark-theme .subject,
+        body.dark-theme .objective,
+        body.dark-theme .time-choice,
+        body.dark-theme .profile-summary,
+        body.dark-theme .card,
+        body.dark-theme .history-card,
+        body.dark-theme .ai-card,
+        body.dark-theme .quiz-card,
+        body.dark-theme .today-item,
+        body.dark-theme .back-button,
+        body.dark-theme .stat,
+        body.dark-theme .settings-card,
+        body.dark-theme .settings-section,
+        body.dark-theme .profile-dropdown,
+        body.dark-theme input,
+        body.dark-theme textarea,
+        body.dark-theme select {
+            background: #1e293b !important;
+            color: #f8fafc !important;
+            border-color: #334155 !important;
+        }
+
+        body.dark-theme .choice-card:hover,
+        body.dark-theme .small-choice:hover,
+        body.dark-theme .subject:hover,
+        body.dark-theme .objective:hover,
+        body.dark-theme .time-choice:hover {
+            background: #24344d !important;
+        }
+
+        body.dark-theme .choice-card.selected,
+        body.dark-theme .small-choice.selected,
+        body.dark-theme .subject.selected,
+        body.dark-theme .objective.selected,
+        body.dark-theme .time-choice.selected {
+            background: #172554 !important;
+            border-color: #2563eb !important;
+            color: #60a5fa !important;
+        }
+
+        body.dark-theme .choice-card span,
+        body.dark-theme .subtitle,
+        body.dark-theme .intro-content p,
+        body.dark-theme .success-content p,
+        body.dark-theme .stat-label,
+        body.dark-theme .history-info p {
+            color: #94a3b8 !important;
+        }
+
+        body.dark-theme .loading-bar,
+        body.dark-theme .progress-container {
+            background: #334155 !important;
+        }
+
+        body.dark-theme input::placeholder,
+        body.dark-theme textarea::placeholder {
+            color: #64748b !important;
+        }
+
+        body.dark-theme option {
+            background: #1e293b !important;
+            color: #f8fafc !important;
+        }
+
+        body.dark-theme .profile-dropdown button,
+        body.dark-theme .profile-dropdown a {
+            color: #f8fafc !important;
+        }
+
+        body.dark-theme .profile-dropdown button:hover,
+        body.dark-theme .profile-dropdown a:hover {
+            background: #334155 !important;
+        }
+
+        body.dark-theme .settingsPage,
+        body.dark-theme #settingsPage {
+            background: #0f172a !important;
+            color: #f8fafc !important;
+        }
+
+        body.dark-theme h1,
+        body.dark-theme h2,
+        body.dark-theme h3,
+        body.dark-theme h4,
+        body.dark-theme strong,
+        body.dark-theme label {
+            color: #f8fafc;
+        }
+
+        body.dark-theme .days.urgent {
+            color: #f87171 !important;
+        }
+
+        body.dark-theme .days.soon {
+            color: #fbbf24 !important;
+        }
+    `;
 }
 
 
@@ -73,13 +208,6 @@ function loadTheme() {
         localStorage.getItem("capControleTheme") || "light";
 
     applyTheme(savedTheme);
-
-    const themeSelect =
-        document.getElementById("themeSelect");
-
-    if (themeSelect) {
-        themeSelect.value = savedTheme;
-    }
 }
 
 
@@ -93,7 +221,9 @@ function changeTheme() {
     }
 
     const theme =
-        themeSelect.value;
+        themeSelect.value === "dark"
+            ? "dark"
+            : "light";
 
     localStorage.setItem(
         "capControleTheme",
@@ -118,9 +248,11 @@ async function loadControls() {
             });
 
         if (!response.ok) {
+
             console.error(
                 "Impossible de charger les contrôles."
             );
+
             return;
         }
 
@@ -140,14 +272,6 @@ async function loadControls() {
         );
     }
 }
-
-
-document
-    .getElementById("addBtn")
-    ?.addEventListener(
-        "click",
-        addControl
-    );
 
 
 async function addControl() {
@@ -212,17 +336,26 @@ async function addControl() {
 
         render();
 
-        document.getElementById(
-            "subject"
-        ).value = "";
+        const subjectInput =
+            document.getElementById("subject");
 
-        document.getElementById(
-            "chapter"
-        ).value = "";
+        const chapterInput =
+            document.getElementById("chapter");
 
-        document.getElementById(
-            "date"
-        ).value = "";
+        const dateInput =
+            document.getElementById("date");
+
+        if (subjectInput) {
+            subjectInput.value = "";
+        }
+
+        if (chapterInput) {
+            chapterInput.value = "";
+        }
+
+        if (dateInput) {
+            dateInput.value = "";
+        }
 
     } catch (error) {
 
@@ -589,19 +722,13 @@ async function register() {
 function showRegister() {
 
     const loginForm =
-        document.getElementById(
-            "loginForm"
-        );
+        document.getElementById("loginForm");
 
     const registerForm =
-        document.getElementById(
-            "registerForm"
-        );
+        document.getElementById("registerForm");
 
     const title =
-        document.getElementById(
-            "authTitle"
-        );
+        document.getElementById("authTitle");
 
     if (loginForm) {
         loginForm.style.display = "none";
@@ -612,8 +739,7 @@ function showRegister() {
     }
 
     if (title) {
-        title.textContent =
-            "Créer un compte";
+        title.textContent = "Créer un compte";
     }
 }
 
@@ -621,19 +747,13 @@ function showRegister() {
 function showLogin() {
 
     const loginForm =
-        document.getElementById(
-            "loginForm"
-        );
+        document.getElementById("loginForm");
 
     const registerForm =
-        document.getElementById(
-            "registerForm"
-        );
+        document.getElementById("registerForm");
 
     const title =
-        document.getElementById(
-            "authTitle"
-        );
+        document.getElementById("authTitle");
 
     if (registerForm) {
         registerForm.style.display = "none";
@@ -644,8 +764,7 @@ function showLogin() {
     }
 
     if (title) {
-        title.textContent =
-            "Connexion";
+        title.textContent = "Connexion";
     }
 }
 
@@ -733,6 +852,11 @@ async function revise(index, minutes) {
 function render() {
 
     if (!controlsContainer) {
+        controlsContainer =
+            document.getElementById("controls");
+    }
+
+    if (!controlsContainer) {
         return;
     }
 
@@ -745,19 +869,13 @@ function render() {
     controlsContainer.innerHTML = "";
 
     const dashboard =
-        document.getElementById(
-            "dashboard"
-        );
+        document.getElementById("dashboard");
 
     const nextExamCard =
-        document.getElementById(
-            "nextExam"
-        );
+        document.getElementById("nextExam");
 
     const todayRevision =
-        document.getElementById(
-            "todayRevision"
-        );
+        document.getElementById("todayRevision");
 
     const futureControls =
         controls.filter(
@@ -776,7 +894,6 @@ function render() {
                 <div class="stat-number">
                     ${controls.length}
                 </div>
-
                 <div class="stat-label">
                     Contrôles
                 </div>
@@ -787,13 +904,10 @@ function render() {
                     ${
                         futureControls.filter(
                             control =>
-                                getDaysLeft(
-                                    control.date
-                                ) <= 7
+                                getDaysLeft(control.date) <= 7
                         ).length
                     }
                 </div>
-
                 <div class="stat-label">
                     Cette semaine
                 </div>
@@ -803,13 +917,10 @@ function render() {
                 <div class="stat-number">
                     ${
                         nextControl
-                            ? getDaysLeft(
-                                nextControl.date
-                            )
+                            ? getDaysLeft(nextControl.date)
                             : "-"
                     }
                 </div>
-
                 <div class="stat-label">
                     Jours restants
                 </div>
@@ -819,7 +930,6 @@ function render() {
                 <div class="stat-number">
                     ${streak}
                 </div>
-
                 <div class="stat-label">
                     Série
                 </div>
@@ -829,7 +939,6 @@ function render() {
                 <div class="stat-number">
                     ${bestStreak}
                 </div>
-
                 <div class="stat-label">
                     Record
                 </div>
@@ -844,22 +953,16 @@ function render() {
             nextExamCard.innerHTML = `
 
                 <h3>
-                    ${escapeHTML(
-                        nextControl.subject
-                    )}
+                    ${escapeHTML(nextControl.subject)}
                 </h3>
 
                 <p>
-                    ${escapeHTML(
-                        nextControl.chapter
-                    )}
+                    ${escapeHTML(nextControl.chapter)}
                 </p>
 
                 <p>
                     Dans ${
-                        getDaysLeft(
-                            nextControl.date
-                        )
+                        getDaysLeft(nextControl.date)
                     } jour(s)
                 </p>
             `;
@@ -896,22 +999,16 @@ function render() {
                         <div class="today-item">
 
                             <strong>
-                                ${escapeHTML(
-                                    control.subject
-                                )}
+                                ${escapeHTML(control.subject)}
                             </strong>
 
                             <p>
-                                ${escapeHTML(
-                                    control.chapter
-                                )}
+                                ${escapeHTML(control.chapter)}
                             </p>
 
                             <p>
                                 ${
-                                    Number(
-                                        control.progress
-                                    ) || 0
+                                    Number(control.progress) || 0
                                 }% terminé
                             </p>
 
@@ -934,8 +1031,7 @@ function render() {
             const daysLeft =
                 getDaysLeft(control.date);
 
-            let className =
-                "normal";
+            let className = "normal";
 
             if (daysLeft <= 3) {
                 className = "urgent";
@@ -951,23 +1047,17 @@ function render() {
                 <div class="card control">
 
                     <h3>
-                        ${escapeHTML(
-                            control.subject
-                        )}
+                        ${escapeHTML(control.subject)}
                     </h3>
 
                     <p>
                         Chapitre :
-                        ${escapeHTML(
-                            control.chapter
-                        )}
+                        ${escapeHTML(control.chapter)}
                     </p>
 
                     <p>
                         Date :
-                        ${formatDate(
-                            control.date
-                        )}
+                        ${formatDate(control.date)}
                     </p>
 
                     <p class="days ${className}">
@@ -991,10 +1081,7 @@ function render() {
                             5 min
                         </option>
 
-                        <option
-                            value="15"
-                            selected
-                        >
+                        <option value="15" selected>
                             15 min
                         </option>
 
@@ -1072,10 +1159,7 @@ async function removeControl(index) {
             return;
         }
 
-        controls.splice(
-            index,
-            1
-        );
+        controls.splice(index, 1);
 
         render();
 
@@ -1097,9 +1181,7 @@ async function removeControl(index) {
 async function generateRevisionSheet() {
 
     const resultDiv =
-        document.getElementById(
-            "aiResult"
-        );
+        document.getElementById("aiResult");
 
     const course =
         document
@@ -1117,20 +1199,24 @@ async function generateRevisionSheet() {
 
     if (course.length > 10000) {
 
-        resultDiv.innerHTML = `
-            <div class="ai-card error">
-                Le cours dépasse 10 000 caractères.
-            </div>
-        `;
+        if (resultDiv) {
+            resultDiv.innerHTML = `
+                <div class="ai-card error">
+                    Le cours dépasse 10 000 caractères.
+                </div>
+            `;
+        }
 
         return;
     }
 
-    resultDiv.innerHTML = `
-        <div class="loading">
-            Génération de la fiche...
-        </div>
-    `;
+    if (resultDiv) {
+        resultDiv.innerHTML = `
+            <div class="loading">
+                Génération de la fiche...
+            </div>
+        `;
+    }
 
     try {
 
@@ -1201,14 +1287,17 @@ async function generateRevisionSheet() {
 
         console.error(error);
 
-        resultDiv.innerHTML = `
-            <div class="ai-card error">
-                ${escapeHTML(
-                    error.message ||
-                    "Erreur lors de la génération."
-                )}
-            </div>
-        `;
+        if (resultDiv) {
+
+            resultDiv.innerHTML = `
+                <div class="ai-card error">
+                    ${escapeHTML(
+                        error.message ||
+                        "Erreur lors de la génération."
+                    )}
+                </div>
+            `;
+        }
     }
 }
 
@@ -1216,9 +1305,7 @@ async function generateRevisionSheet() {
 function displayRevisionSheet(data) {
 
     const resultDiv =
-        document.getElementById(
-            "aiResult"
-        );
+        document.getElementById("aiResult");
 
     if (!resultDiv) {
         return;
@@ -1231,9 +1318,7 @@ function displayRevisionSheet(data) {
             <h2>Résumé</h2>
 
             <p>
-                ${escapeHTML(
-                    data.summary || ""
-                )}
+                ${escapeHTML(data.summary || "")}
             </p>
 
         </div>
@@ -1245,9 +1330,7 @@ function displayRevisionSheet(data) {
             <ul>
 
                 ${
-                    Array.isArray(
-                        data.keyPoints
-                    )
+                    Array.isArray(data.keyPoints)
                         ? data.keyPoints
                             .map(
                                 point =>
@@ -1269,17 +1352,12 @@ function displayRevisionSheet(data) {
                 Array.isArray(data.quiz)
                     ? data.quiz
                         .map(
-                            (
-                                question,
-                                index
-                            ) => `
+                            (question, index) => `
 
                                 <div class="quiz-card">
 
                                     <h3>
-                                        Question ${
-                                            index + 1
-                                        }
+                                        Question ${index + 1}
                                     </h3>
 
                                     <p>
@@ -1321,18 +1399,14 @@ function displayRevisionSheet(data) {
 function renderHistory() {
 
     const historyList =
-        document.getElementById(
-            "historyList"
-        );
+        document.getElementById("historyList");
 
     if (!historyList) {
         return;
     }
 
     const searchInput =
-        document.getElementById(
-            "historySearch"
-        );
+        document.getElementById("historySearch");
 
     const search =
         searchInput
@@ -1344,9 +1418,7 @@ function renderHistory() {
     const filtered =
         history.filter(
             item =>
-                String(
-                    item.course || ""
-                )
+                String(item.course || "")
                     .toLowerCase()
                     .includes(search)
         );
@@ -1410,10 +1482,6 @@ function renderHistory() {
 }
 
 
-/* ================================================= */
-/*                 OUVRIR HISTORIQUE                 */
-/* ================================================= */
-
 function loadHistory(index) {
 
     const item =
@@ -1428,14 +1496,10 @@ function loadHistory(index) {
         return;
     }
 
-    displayRevisionSheet(
-        item.result
-    );
+    displayRevisionSheet(item.result);
 
     const resultDiv =
-        document.getElementById(
-            "aiResult"
-        );
+        document.getElementById("aiResult");
 
     if (resultDiv) {
 
@@ -1471,10 +1535,7 @@ async function renameHistory(index) {
             item.course
         );
 
-    if (
-        !newName ||
-        !newName.trim()
-    ) {
+    if (!newName || !newName.trim()) {
         return;
     }
 
@@ -1587,10 +1648,7 @@ async function deleteHistory(index) {
             return;
         }
 
-        history.splice(
-            index,
-            1
-        );
+        history.splice(index, 1);
 
         renderHistory();
 
@@ -1675,9 +1733,7 @@ async function shareHistory(index) {
 async function importSheet() {
 
     const input =
-        document.getElementById(
-            "shareCode"
-        );
+        document.getElementById("shareCode");
 
     const code =
         input
@@ -1815,32 +1871,18 @@ async function updateStreak() {
             me.user?.lastRevisionDate ||
             null;
 
-        if (
-            lastRevision ===
-            todayKey
-        ) {
+        if (lastRevision === todayKey) {
             return;
         }
 
-        if (
-            lastRevision ===
-            yesterdayKey
-        ) {
-
+        if (lastRevision === yesterdayKey) {
             streak++;
-
         } else {
-
             streak = 1;
         }
 
-        if (
-            streak >
-            bestStreak
-        ) {
-
-            bestStreak =
-                streak;
+        if (streak > bestStreak) {
+            bestStreak = streak;
         }
 
         await saveStats();
@@ -1859,10 +1901,7 @@ async function updateStreak() {
 /*                 CHRONOMÈTRE                       */
 /* ================================================= */
 
-function startRevision(
-    index,
-    button
-) {
+function startRevision(index, button) {
 
     const select =
         document.getElementById(
@@ -1903,13 +1942,9 @@ function startRevision(
                 button.textContent =
                     `${mins}:${secs}`;
 
-                if (
-                    timeLeft <= 0
-                ) {
+                if (timeLeft <= 0) {
 
-                    clearInterval(
-                        interval
-                    );
+                    clearInterval(interval);
 
                     revise(
                         index,
@@ -1930,26 +1965,11 @@ function startRevision(
 function escapeHTML(value) {
 
     return String(value ?? "")
-        .replace(
-            /&/g,
-            "&amp;"
-        )
-        .replace(
-            /</g,
-            "&lt;"
-        )
-        .replace(
-            />/g,
-            "&gt;"
-        )
-        .replace(
-            /"/g,
-            "&quot;"
-        )
-        .replace(
-            /'/g,
-            "&#039;"
-        );
+        .replace(/&/g, "&amp;")
+        .replace(/</g, "&lt;")
+        .replace(/>/g, "&gt;")
+        .replace(/"/g, "&quot;")
+        .replace(/'/g, "&#039;");
 }
 
 
@@ -1957,165 +1977,166 @@ function escapeHTML(value) {
 /*                   MENU PROFIL                     */
 /* ================================================= */
 
-const profileButton =
-    document.getElementById(
-        "profileButton"
-    );
+function initializeProfileMenu() {
 
-const profileDropdown =
-    document.getElementById(
-        "profileDropdown"
-    );
-
-const settingsButton =
-    document.getElementById(
-        "settingsButton"
-    );
-
-const logoutButton =
-    document.getElementById(
-        "logoutButton"
-    );
-
-
-profileButton?.addEventListener(
-    "click",
-    event => {
-
-        event.stopPropagation();
-
-        profileDropdown?.classList.toggle(
-            "open"
-        );
-    }
-);
-
-
-profileDropdown?.addEventListener(
-    "click",
-    event => {
-
-        event.stopPropagation();
-    }
-);
-
-
-document.addEventListener(
-    "click",
-    () => {
-
-        profileDropdown?.classList.remove(
-            "open"
-        );
-    }
-);
-
-
-settingsButton?.addEventListener(
-    "click",
-    () => {
-
-        profileDropdown?.classList.remove(
-            "open"
+    const profileButton =
+        document.getElementById(
+            "profileButton"
         );
 
-        openSettings();
-    }
-);
+    const profileDropdown =
+        document.getElementById(
+            "profileDropdown"
+        );
+
+    const settingsButton =
+        document.getElementById(
+            "settingsButton"
+        );
+
+    const logoutButton =
+        document.getElementById(
+            "logoutButton"
+        );
+
+    profileButton?.addEventListener(
+        "click",
+        event => {
+
+            event.stopPropagation();
+
+            profileDropdown?.classList.toggle(
+                "open"
+            );
+        }
+    );
+
+    profileDropdown?.addEventListener(
+        "click",
+        event => {
+
+            event.stopPropagation();
+        }
+    );
+
+    document.addEventListener(
+        "click",
+        () => {
+
+            profileDropdown?.classList.remove(
+                "open"
+            );
+        }
+    );
+
+    settingsButton?.addEventListener(
+        "click",
+        () => {
+
+            profileDropdown?.classList.remove(
+                "open"
+            );
+
+            openSettings();
+        }
+    );
+
+    logoutButton?.addEventListener(
+        "click",
+        logout
+    );
+}
 
 
 /* ================================================= */
 /*                    DÉCONNEXION                    */
 /* ================================================= */
 
-logoutButton?.addEventListener(
-    "click",
-    async () => {
+async function logout() {
 
-        try {
+    try {
 
-            const response =
-                await fetch(
-                    "/logout",
-                    {
-                        method: "POST",
-                        credentials:
-                            "include"
-                    }
-                );
-
-            const data =
-                await response.json();
-
-            if (!response.ok) {
-
-                alert(
-                    data.error ||
-                    "Impossible de se déconnecter."
-                );
-
-                return;
-            }
-
-            profileDropdown?.classList.remove(
-                "open"
+        const response =
+            await fetch(
+                "/logout",
+                {
+                    method: "POST",
+                    credentials: "include"
+                }
             );
 
-            const app =
-                document.getElementById(
-                    "app"
-                );
+        const data =
+            await response.json();
 
-            const loginScreen =
-                document.getElementById(
-                    "loginScreen"
-                );
-
-            if (app) {
-                app.style.display =
-                    "none";
-            }
-
-            if (loginScreen) {
-                loginScreen.style.display =
-                    "block";
-            }
-
-            const loginEmail =
-                document.getElementById(
-                    "loginEmail"
-                );
-
-            const loginPassword =
-                document.getElementById(
-                    "loginPassword"
-                );
-
-            if (loginEmail) {
-                loginEmail.value = "";
-            }
-
-            if (loginPassword) {
-                loginPassword.value = "";
-            }
-
-            currentUser = null;
-
-            showLogin();
-
-        } catch (error) {
-
-            console.error(
-                "Erreur déconnexion :",
-                error
-            );
+        if (!response.ok) {
 
             alert(
-                "Impossible de contacter le serveur."
+                data.error ||
+                "Impossible de se déconnecter."
             );
+
+            return;
         }
+
+        const profileDropdown =
+            document.getElementById(
+                "profileDropdown"
+            );
+
+        profileDropdown?.classList.remove(
+            "open"
+        );
+
+        const app =
+            document.getElementById("app");
+
+        const loginScreen =
+            document.getElementById(
+                "loginScreen"
+            );
+
+        if (app) {
+            app.style.display = "none";
+        }
+
+        if (loginScreen) {
+            loginScreen.style.display = "block";
+        }
+
+        const loginEmail =
+            document.getElementById(
+                "loginEmail"
+            );
+
+        const loginPassword =
+            document.getElementById(
+                "loginPassword"
+            );
+
+        if (loginEmail) {
+            loginEmail.value = "";
+        }
+
+        if (loginPassword) {
+            loginPassword.value = "";
+        }
+
+        currentUser = null;
+
+        showLogin();
+
+    } catch (error) {
+
+        console.error(
+            "Erreur déconnexion :",
+            error
+        );
+
+        alert(
+            "Impossible de contacter le serveur."
+        );
     }
-);
+}
 
 
 /* ================================================= */
@@ -2144,17 +2165,14 @@ function openSettings() {
     }
 
     if (profileMenu) {
-        profileMenu.style.display =
-            "none";
+        profileMenu.style.display = "none";
     }
 
     if (container) {
-        container.style.display =
-            "none";
+        container.style.display = "none";
     }
 
-    settingsPage.style.display =
-        "block";
+    settingsPage.style.display = "block";
 
     loadSettings();
 }
@@ -2181,17 +2199,14 @@ function closeSettings() {
         return;
     }
 
-    settingsPage.style.display =
-        "none";
+    settingsPage.style.display = "none";
 
     if (profileMenu) {
-        profileMenu.style.display =
-            "block";
+        profileMenu.style.display = "block";
     }
 
     if (container) {
-        container.style.display =
-            "block";
+        container.style.display = "block";
     }
 }
 
@@ -2230,10 +2245,7 @@ async function loadSettings() {
         const data =
             await response.json();
 
-        if (
-            !data.loggedIn ||
-            !data.user
-        ) {
+        if (!data.loggedIn || !data.user) {
             return;
         }
 
@@ -2262,13 +2274,11 @@ async function loadSettings() {
         );
 
         if (usernameElement) {
-
             usernameElement.textContent =
                 "Impossible de charger";
         }
 
         if (emailElement) {
-
             emailElement.textContent =
                 "Impossible de charger";
         }
@@ -2280,8 +2290,7 @@ async function loadSettings() {
         ) || "light";
 
     if (themeSelect) {
-        themeSelect.value =
-            savedTheme;
+        themeSelect.value = savedTheme;
     }
 
     applyTheme(savedTheme);
@@ -2369,7 +2378,6 @@ async function editUsername() {
             );
 
         if (usernameElement) {
-
             usernameElement.textContent =
                 username;
         }
@@ -2422,10 +2430,7 @@ async function changePassword() {
         return;
     }
 
-    if (
-        newPassword !==
-        confirmation
-    ) {
+    if (newPassword !== confirmation) {
 
         alert(
             "Les mots de passe ne correspondent pas."
@@ -2502,10 +2507,7 @@ async function deleteAccount() {
             'Pour confirmer, écris "SUPPRIMER".'
         );
 
-    if (
-        secondConfirmation !==
-        "SUPPRIMER"
-    ) {
+    if (secondConfirmation !== "SUPPRIMER") {
 
         alert(
             "Suppression annulée."
@@ -2544,17 +2546,30 @@ async function deleteAccount() {
 
         currentUser = null;
 
-        document.getElementById(
-            "app"
-        ).style.display = "none";
+        const app =
+            document.getElementById("app");
 
-        document.getElementById(
-            "settingsPage"
-        ).style.display = "none";
+        const settingsPage =
+            document.getElementById(
+                "settingsPage"
+            );
 
-        document.getElementById(
-            "loginScreen"
-        ).style.display = "block";
+        const loginScreen =
+            document.getElementById(
+                "loginScreen"
+            );
+
+        if (app) {
+            app.style.display = "none";
+        }
+
+        if (settingsPage) {
+            settingsPage.style.display = "none";
+        }
+
+        if (loginScreen) {
+            loginScreen.style.display = "block";
+        }
 
         showLogin();
 
@@ -2597,8 +2612,7 @@ function getOnboardingKey() {
 
         return (
             "capControleOnboarding_" +
-            currentUser.email
-                .toLowerCase()
+            currentUser.email.toLowerCase()
         );
     }
 
@@ -2624,11 +2638,8 @@ function saveOnboarding() {
     );
 
     localStorage.setItem(
-        getOnboardingKey() +
-        "_data",
-        JSON.stringify(
-            onboardingData
-        )
+        getOnboardingKey() + "_data",
+        JSON.stringify(onboardingData)
     );
 }
 
@@ -2639,8 +2650,7 @@ function loadOnboardingData() {
 
         const saved =
             localStorage.getItem(
-                getOnboardingKey() +
-                "_data"
+                getOnboardingKey() + "_data"
             );
 
         if (!saved) {
@@ -2678,62 +2688,40 @@ function loadOnboardingData() {
 function showIntro() {
 
     const intro =
-        document.getElementById(
-            "intro"
-        );
+        document.getElementById("intro");
 
     const onboarding =
-        document.getElementById(
-            "onboarding"
-        );
+        document.getElementById("onboarding");
 
     const success =
-        document.getElementById(
-            "success"
-        );
+        document.getElementById("success");
 
     const app =
-        document.getElementById(
-            "app"
-        );
+        document.getElementById("app");
 
     if (app) {
-        app.style.display =
-            "none";
+        app.style.display = "none";
     }
 
     if (intro) {
-        intro.classList.remove(
-            "hidden"
-        );
-        intro.style.display =
-            "flex";
+
+        intro.classList.remove("hidden");
+        intro.style.display = "flex";
     }
 
     if (onboarding) {
-        onboarding.classList.add(
-            "hidden"
-        );
+        onboarding.classList.add("hidden");
     }
 
     if (success) {
-        success.classList.add(
-            "hidden"
-        );
+        success.classList.add("hidden");
     }
 
-    /*
-     * IMPORTANT :
-     * On attend un peu plus longtemps
-     * que l'animation de la barre.
-     */
     setTimeout(
         () => {
 
             if (intro) {
-                intro.classList.add(
-                    "hidden"
-                );
+                intro.classList.add("hidden");
             }
 
             if (onboarding) {
@@ -2756,25 +2744,17 @@ function showIntro() {
 function showSuccess() {
 
     const onboarding =
-        document.getElementById(
-            "onboarding"
-        );
+        document.getElementById("onboarding");
 
     const success =
-        document.getElementById(
-            "success"
-        );
+        document.getElementById("success");
 
     if (onboarding) {
-        onboarding.classList.add(
-            "hidden"
-        );
+        onboarding.classList.add("hidden");
     }
 
     if (success) {
-        success.classList.remove(
-            "hidden"
-        );
+        success.classList.remove("hidden");
     }
 
     const summary =
@@ -2818,9 +2798,7 @@ function showSuccess() {
                   onboardingData.subjects
                     .map(
                         subject =>
-                            escapeHTML(
-                                subject
-                            )
+                            escapeHTML(subject)
                     )
                     .join(", ") +
                   "<br>"
@@ -2846,56 +2824,38 @@ function showSuccess() {
 function showApp() {
 
     const intro =
-        document.getElementById(
-            "intro"
-        );
+        document.getElementById("intro");
 
     const onboarding =
-        document.getElementById(
-            "onboarding"
-        );
+        document.getElementById("onboarding");
 
     const success =
-        document.getElementById(
-            "success"
-        );
+        document.getElementById("success");
 
     const loginScreen =
-        document.getElementById(
-            "loginScreen"
-        );
+        document.getElementById("loginScreen");
 
     const app =
-        document.getElementById(
-            "app"
-        );
+        document.getElementById("app");
 
     if (intro) {
-        intro.classList.add(
-            "hidden"
-        );
+        intro.classList.add("hidden");
     }
 
     if (onboarding) {
-        onboarding.classList.add(
-            "hidden"
-        );
+        onboarding.classList.add("hidden");
     }
 
     if (success) {
-        success.classList.add(
-            "hidden"
-        );
+        success.classList.add("hidden");
     }
 
     if (loginScreen) {
-        loginScreen.style.display =
-            "none";
+        loginScreen.style.display = "none";
     }
 
     if (app) {
-        app.style.display =
-            "block";
+        app.style.display = "block";
     }
 }
 
@@ -2915,14 +2875,11 @@ function updateOnboarding() {
         step => {
 
             const stepNumber =
-                Number(
-                    step.dataset.step
-                );
+                Number(step.dataset.step);
 
             step.classList.toggle(
                 "active",
-                stepNumber ===
-                onboardingStep
+                stepNumber === onboardingStep
             );
         }
     );
@@ -2940,11 +2897,7 @@ function updateOnboarding() {
     if (progressBar) {
 
         progressBar.style.width =
-            `${
-                (
-                    onboardingStep / 6
-                ) * 100
-            }%`;
+            `${(onboardingStep / 6) * 100}%`;
     }
 
     if (stepNumber) {
@@ -2997,8 +2950,7 @@ function updateContinueButton() {
 
         case 4:
             valid =
-                onboardingData.subjects
-                    .length > 0;
+                onboardingData.subjects.length > 0;
             break;
 
         case 5:
@@ -3021,291 +2973,7 @@ function updateContinueButton() {
 
 
 /* ================================================= */
-/*                  BOUTON RETOUR                    */
-/* ================================================= */
-
-document
-    .getElementById(
-        "backButton"
-    )
-    ?.addEventListener(
-        "click",
-        () => {
-
-            if (
-                onboardingStep <= 1
-            ) {
-                return;
-            }
-
-            onboardingStep--;
-
-            updateOnboarding();
-        }
-    );
-
-
-/* ================================================= */
-/*             BOUTONS CONTINUER                    */
-/* ================================================= */
-
-document
-    .querySelectorAll(
-        ".next-button"
-    )
-    .forEach(
-        button => {
-
-            button.addEventListener(
-                "click",
-                () => {
-
-                    if (
-                        button.disabled ||
-                        button.classList.contains(
-                            "disabled"
-                        )
-                    ) {
-                        return;
-                    }
-
-                    if (
-                        onboardingStep < 6
-                    ) {
-
-                        onboardingStep++;
-
-                        updateOnboarding();
-                    }
-                }
-            );
-        }
-    );
-
-
-/* ================================================= */
-/*                    RÔLE                           */
-/* ================================================= */
-
-document
-    .querySelectorAll(
-        ".choice-card"
-    )
-    .forEach(
-        card => {
-
-            card.addEventListener(
-                "click",
-                () => {
-
-                    document
-                        .querySelectorAll(
-                            ".choice-card"
-                        )
-                        .forEach(
-                            element =>
-                                element.classList.remove(
-                                    "selected"
-                                )
-                        );
-
-                    card.classList.add(
-                        "selected"
-                    );
-
-                    onboardingData.role =
-                        card.dataset.value;
-
-                    updateContinueButton();
-                }
-            );
-        }
-    );
-
-
-/* ================================================= */
-/*                   CLASSE                          */
-/* ================================================= */
-
-document
-    .querySelectorAll(
-        ".small-choice"
-    )
-    .forEach(
-        button => {
-
-            button.addEventListener(
-                "click",
-                () => {
-
-                    document
-                        .querySelectorAll(
-                            ".small-choice"
-                        )
-                        .forEach(
-                            element =>
-                                element.classList.remove(
-                                    "selected"
-                                )
-                        );
-
-                    button.classList.add(
-                        "selected"
-                    );
-
-                    onboardingData.class =
-                        button.dataset.value;
-
-                    updateContinueButton();
-                }
-            );
-        }
-    );
-
-
-/* ================================================= */
-/*                  MATIÈRES                         */
-/* ================================================= */
-
-document
-    .querySelectorAll(
-        ".subject"
-    )
-    .forEach(
-        button => {
-
-            button.addEventListener(
-                "click",
-                () => {
-
-                    const value =
-                        button.dataset.value;
-
-                    button.classList.toggle(
-                        "selected"
-                    );
-
-                    if (
-                        onboardingData.subjects
-                            .includes(value)
-                    ) {
-
-                        onboardingData.subjects =
-                            onboardingData.subjects
-                                .filter(
-                                    subject =>
-                                        subject !==
-                                        value
-                                );
-
-                    } else {
-
-                        onboardingData.subjects
-                            .push(value);
-                    }
-
-                    updateContinueButton();
-                }
-            );
-        }
-    );
-
-
-/* ================================================= */
-/*                  OBJECTIF                         */
-/* ================================================= */
-
-document
-    .querySelectorAll(
-        ".objective"
-    )
-    .forEach(
-        button => {
-
-            button.addEventListener(
-                "click",
-                () => {
-
-                    document
-                        .querySelectorAll(
-                            ".objective"
-                        )
-                        .forEach(
-                            element =>
-                                element.classList.remove(
-                                    "selected"
-                                )
-                        );
-
-                    button.classList.add(
-                        "selected"
-                    );
-
-                    onboardingData.objective =
-                        button.dataset.value;
-
-                    updateContinueButton();
-                }
-            );
-        }
-    );
-
-
-/* ================================================= */
-/*                    TEMPS                          */
-/* ================================================= */
-
-document
-    .querySelectorAll(
-        ".time-choice"
-    )
-    .forEach(
-        button => {
-
-            button.addEventListener(
-                "click",
-                () => {
-
-                    document
-                        .querySelectorAll(
-                            ".time-choice"
-                        )
-                        .forEach(
-                            element =>
-                                element.classList.remove(
-                                    "selected"
-                                )
-                        );
-
-                    button.classList.add(
-                        "selected"
-                    );
-
-                    onboardingData.time =
-                        button.dataset.value;
-
-                    const finishButton =
-                        document.getElementById(
-                            "finishButton"
-                        );
-
-                    if (finishButton) {
-
-                        finishButton.classList.remove(
-                            "disabled"
-                        );
-
-                        finishButton.disabled =
-                            false;
-                    }
-                }
-            );
-        }
-    );
-
-
-/* ================================================= */
-/*                OBJECTIFS LABELS                   */
+/*                  OBJECTIFS LABELS                 */
 /* ================================================= */
 
 function getObjectiveLabel(value) {
@@ -3339,41 +3007,6 @@ function getObjectiveLabel(value) {
 /*              TERMINER ONBOARDING                  */
 /* ================================================= */
 
-document
-    .getElementById(
-        "finishButton"
-    )
-    ?.addEventListener(
-        "click",
-        async () => {
-
-            const button =
-                document.getElementById(
-                    "finishButton"
-                );
-
-            if (
-                !onboardingData.time ||
-                button?.disabled
-            ) {
-                return;
-            }
-
-            saveOnboarding();
-
-            showSuccess();
-        }
-    );
-
-
-/*
- * Ton HTML appelle également :
- *
- * onclick="completeOnboarding()"
- *
- * Cette fonction manquait dans ton ancien JS.
- */
-
 async function completeOnboarding() {
 
     saveOnboarding();
@@ -3386,32 +3019,6 @@ async function completeOnboarding() {
 
 
 /* ================================================= */
-/*              DÉCOUVRIR APPLICATION                */
-/* ================================================= */
-
-document
-    .getElementById(
-        "discoverButton"
-    )
-    ?.addEventListener(
-        "click",
-        async event => {
-
-            /*
-             * Empêche le onclick du HTML
-             * et l'event listener de faire
-             * deux fois la même chose.
-             */
-            if (event) {
-                event.preventDefault();
-            }
-
-            await completeOnboarding();
-        }
-    );
-
-
-/* ================================================= */
 /*          DÉMARRER EXPÉRIENCE COMPTE              */
 /* ================================================= */
 
@@ -3419,9 +3026,7 @@ async function startAccountExperience() {
 
     loadOnboardingData();
 
-    if (
-        hasCompletedOnboarding()
-    ) {
+    if (hasCompletedOnboarding()) {
 
         showApp();
 
@@ -3436,6 +3041,381 @@ async function startAccountExperience() {
 
 
 /* ================================================= */
+/*             INITIALISATION DOM                    */
+/* ================================================= */
+
+function initializeApp() {
+
+    controlsContainer =
+        document.getElementById("controls");
+
+
+    /* ========================= */
+    /* THÈME */
+    /* ========================= */
+
+    loadTheme();
+
+    const themeSelect =
+        document.getElementById(
+            "themeSelect"
+        );
+
+    if (themeSelect) {
+
+        themeSelect.addEventListener(
+            "change",
+            changeTheme
+        );
+    }
+
+
+    /* ========================= */
+    /* AJOUT CONTRÔLE */
+    /* ========================= */
+
+    document
+        .getElementById("addBtn")
+        ?.addEventListener(
+            "click",
+            addControl
+        );
+
+
+    /* ========================= */
+    /* MENU PROFIL */
+    /* ========================= */
+
+    initializeProfileMenu();
+
+
+    /* ========================= */
+    /* RETOUR ONBOARDING */
+    /* ========================= */
+
+    document
+        .getElementById("backButton")
+        ?.addEventListener(
+            "click",
+            () => {
+
+                if (onboardingStep <= 1) {
+                    return;
+                }
+
+                onboardingStep--;
+
+                updateOnboarding();
+            }
+        );
+
+
+    /* ========================= */
+    /* BOUTONS CONTINUER */
+    /* ========================= */
+
+    document
+        .querySelectorAll(".next-button")
+        .forEach(
+            button => {
+
+                button.addEventListener(
+                    "click",
+                    () => {
+
+                        if (
+                            button.disabled ||
+                            button.classList.contains(
+                                "disabled"
+                            )
+                        ) {
+                            return;
+                        }
+
+                        if (
+                            onboardingStep < 6
+                        ) {
+
+                            onboardingStep++;
+
+                            updateOnboarding();
+                        }
+                    }
+                );
+            }
+        );
+
+
+    /* ========================= */
+    /* RÔLE */
+    /* ========================= */
+
+    document
+        .querySelectorAll(".choice-card")
+        .forEach(
+            card => {
+
+                card.addEventListener(
+                    "click",
+                    () => {
+
+                        document
+                            .querySelectorAll(
+                                ".choice-card"
+                            )
+                            .forEach(
+                                element =>
+                                    element.classList.remove(
+                                        "selected"
+                                    )
+                            );
+
+                        card.classList.add(
+                            "selected"
+                        );
+
+                        onboardingData.role =
+                            card.dataset.value;
+
+                        updateContinueButton();
+                    }
+                );
+            }
+        );
+
+
+    /* ========================= */
+    /* CLASSE */
+    /* ========================= */
+
+    document
+        .querySelectorAll(".small-choice")
+        .forEach(
+            button => {
+
+                button.addEventListener(
+                    "click",
+                    () => {
+
+                        document
+                            .querySelectorAll(
+                                ".small-choice"
+                            )
+                            .forEach(
+                                element =>
+                                    element.classList.remove(
+                                        "selected"
+                                    )
+                            );
+
+                        button.classList.add(
+                            "selected"
+                        );
+
+                        onboardingData.class =
+                            button.dataset.value;
+
+                        updateContinueButton();
+                    }
+                );
+            }
+        );
+
+
+    /* ========================= */
+    /* MATIÈRES */
+    /* ========================= */
+
+    document
+        .querySelectorAll(".subject")
+        .forEach(
+            button => {
+
+                button.addEventListener(
+                    "click",
+                    () => {
+
+                        const value =
+                            button.dataset.value;
+
+                        button.classList.toggle(
+                            "selected"
+                        );
+
+                        if (
+                            onboardingData.subjects
+                                .includes(value)
+                        ) {
+
+                            onboardingData.subjects =
+                                onboardingData.subjects
+                                    .filter(
+                                        subject =>
+                                            subject !== value
+                                    );
+
+                        } else {
+
+                            onboardingData.subjects
+                                .push(value);
+                        }
+
+                        updateContinueButton();
+                    }
+                );
+            }
+        );
+
+
+    /* ========================= */
+    /* OBJECTIF */
+    /* ========================= */
+
+    document
+        .querySelectorAll(".objective")
+        .forEach(
+            button => {
+
+                button.addEventListener(
+                    "click",
+                    () => {
+
+                        document
+                            .querySelectorAll(
+                                ".objective"
+                            )
+                            .forEach(
+                                element =>
+                                    element.classList.remove(
+                                        "selected"
+                                    )
+                            );
+
+                        button.classList.add(
+                            "selected"
+                        );
+
+                        onboardingData.objective =
+                            button.dataset.value;
+
+                        updateContinueButton();
+                    }
+                );
+            }
+        );
+
+
+    /* ========================= */
+    /* TEMPS */
+    /* ========================= */
+
+    document
+        .querySelectorAll(".time-choice")
+        .forEach(
+            button => {
+
+                button.addEventListener(
+                    "click",
+                    () => {
+
+                        document
+                            .querySelectorAll(
+                                ".time-choice"
+                            )
+                            .forEach(
+                                element =>
+                                    element.classList.remove(
+                                        "selected"
+                                    )
+                            );
+
+                        button.classList.add(
+                            "selected"
+                        );
+
+                        onboardingData.time =
+                            button.dataset.value;
+
+                        const finishButton =
+                            document.getElementById(
+                                "finishButton"
+                            );
+
+                        if (finishButton) {
+
+                            finishButton.classList.remove(
+                                "disabled"
+                            );
+
+                            finishButton.disabled =
+                                false;
+                        }
+                    }
+                );
+            }
+        );
+
+
+    /* ========================= */
+    /* TERMINER */
+    /* ========================= */
+
+    document
+        .getElementById("finishButton")
+        ?.addEventListener(
+            "click",
+            async () => {
+
+                const button =
+                    document.getElementById(
+                        "finishButton"
+                    );
+
+                if (
+                    !onboardingData.time ||
+                    button?.disabled
+                ) {
+                    return;
+                }
+
+                saveOnboarding();
+
+                showSuccess();
+            }
+        );
+
+
+    /* ========================= */
+    /* DÉCOUVRIR */
+    /* ========================= */
+
+    document
+        .getElementById("discoverButton")
+        ?.addEventListener(
+            "click",
+            async event => {
+
+                event.preventDefault();
+
+                await completeOnboarding();
+            }
+        );
+
+
+    /* ========================= */
+    /* RECHERCHE HISTORIQUE */
+    /* ========================= */
+
+    document
+        .getElementById("historySearch")
+        ?.addEventListener(
+            "input",
+            renderHistory
+        );
+}
+
+
+/* ================================================= */
 /*                 INITIALISATION                    */
 /* ================================================= */
 
@@ -3443,7 +3423,7 @@ window.addEventListener(
     "load",
     async () => {
 
-        loadTheme();
+        initializeApp();
 
         try {
 
@@ -3454,6 +3434,7 @@ window.addEventListener(
 
             const data =
                 await response.json();
+
 
             /* ========================= */
             /* UTILISATEUR CONNECTÉ       */
@@ -3485,9 +3466,7 @@ window.addEventListener(
             /* ========================= */
 
             const intro =
-                document.getElementById(
-                    "intro"
-                );
+                document.getElementById("intro");
 
             const onboarding =
                 document.getElementById(
@@ -3500,31 +3479,22 @@ window.addEventListener(
                 );
 
             const app =
-                document.getElementById(
-                    "app"
-                );
+                document.getElementById("app");
 
             if (intro) {
-                intro.classList.add(
-                    "hidden"
-                );
+                intro.classList.add("hidden");
             }
 
             if (onboarding) {
-                onboarding.classList.add(
-                    "hidden"
-                );
+                onboarding.classList.add("hidden");
             }
 
             if (success) {
-                success.classList.add(
-                    "hidden"
-                );
+                success.classList.add("hidden");
             }
 
             if (app) {
-                app.style.display =
-                    "none";
+                app.style.display = "none";
             }
 
             const loginScreen =
@@ -3543,12 +3513,6 @@ window.addEventListener(
                 "Erreur vérification session :",
                 error
             );
-
-            /*
-             * Si /me plante, on affiche quand même
-             * l'écran de connexion plutôt que
-             * de laisser une page vide.
-             */
 
             const loginScreen =
                 document.getElementById(
