@@ -1411,37 +1411,78 @@ window.addEventListener(
     }
 );
 
+/* ================================================= */
+/*                    PARAMÈTRES                     */
+/* ================================================= */
+
+let currentUser = null;
+
+
 /* ========================= */
-/* PARAMÈTRES */
+/* OUVRIR LES PARAMÈTRES */
 /* ========================= */
 
-function openSettings(){
+function openSettings() {
 
-    const app = document.getElementById("app");
-    const settingsPage = document.getElementById("settingsPage");
+    const settingsPage =
+        document.getElementById("settingsPage");
 
-    if(!settingsPage) return;
+    const profileMenu =
+        document.querySelector(".profile-menu-container");
 
-    app.style.display = "none";
+    const container =
+        document.querySelector(".container");
+
+    if (!settingsPage) return;
+
+    if (profileMenu) {
+        profileMenu.style.display = "none";
+    }
+
+    if (container) {
+        container.style.display = "none";
+    }
+
     settingsPage.style.display = "block";
 
     loadSettings();
 }
 
 
-function closeSettings(){
+/* ========================= */
+/* FERMER LES PARAMÈTRES */
+/* ========================= */
 
-    const app = document.getElementById("app");
-    const settingsPage = document.getElementById("settingsPage");
+function closeSettings() {
 
-    if(!settingsPage) return;
+    const settingsPage =
+        document.getElementById("settingsPage");
+
+    const profileMenu =
+        document.querySelector(".profile-menu-container");
+
+    const container =
+        document.querySelector(".container");
+
+    if (!settingsPage) return;
 
     settingsPage.style.display = "none";
-    app.style.display = "block";
+
+    if (profileMenu) {
+        profileMenu.style.display = "block";
+    }
+
+    if (container) {
+        container.style.display = "block";
+    }
 }
 
 
-function loadSettings(){
+/* ========================= */
+/* CHARGER LE PROFIL */
+/* ========================= */
+
+async function loadSettings() {
 
     const usernameElement =
         document.getElementById("settingsUsername");
@@ -1452,83 +1493,193 @@ function loadSettings(){
     const themeSelect =
         document.getElementById("themeSelect");
 
+    try {
 
-    /*
-     * Ces variables seront automatiquement
-     * récupérées si ton système de connexion
-     * utilise currentUser.
-     */
+        const response =
+            await fetch("/me", {
+                credentials: "include"
+            });
 
-    if(typeof currentUser !== "undefined" && currentUser){
+        if (!response.ok) {
+            throw new Error(
+                "Impossible de récupérer le profil."
+            );
+        }
 
-        if(usernameElement){
+        const data =
+            await response.json();
+
+        if (!data.loggedIn || !data.user) {
+            return;
+        }
+
+        currentUser = data.user;
+
+        if (usernameElement) {
             usernameElement.textContent =
                 currentUser.username || "Non renseigné";
         }
 
-        if(emailElement){
+        if (emailElement) {
             emailElement.textContent =
                 currentUser.email || "Non renseigné";
         }
 
+    } catch (error) {
+
+        console.error(
+            "Erreur chargement paramètres :",
+            error
+        );
+
+        if (usernameElement) {
+            usernameElement.textContent =
+                "Impossible de charger";
+        }
+
+        if (emailElement) {
+            emailElement.textContent =
+                "Impossible de charger";
+        }
     }
 
 
-    const savedTheme =
-        localStorage.getItem("capControleTheme") || "light";
+    /* ========================= */
+    /* THÈME */
+    /* ========================= */
 
-    if(themeSelect){
+    const savedTheme =
+        localStorage.getItem(
+            "capControleTheme"
+        ) || "light";
+
+    if (themeSelect) {
         themeSelect.value = savedTheme;
     }
 
+    applyTheme(savedTheme);
 }
 
 
-function editUsername(){
+/* ========================= */
+/* MODIFIER LE PSEUDO */
+/* ========================= */
+
+async function editUsername() {
+
+    if (!currentUser) {
+        await loadSettings();
+    }
 
     const newUsername =
-        prompt("Entre ton nouveau pseudo :");
+        prompt(
+            "Entre ton nouveau pseudo :",
+            currentUser?.username || ""
+        );
 
-    if(!newUsername) return;
+    if (newUsername === null) {
+        return;
+    }
 
     const username =
         newUsername.trim();
 
-    if(username.length < 2){
+    if (username.length < 2) {
 
-        alert("Le pseudo doit contenir au moins 2 caractères.");
-        return;
-
-    }
-
-    if(typeof currentUser !== "undefined" && currentUser){
-
-        currentUser.username = username;
-
-        localStorage.setItem(
-            "currentUser",
-            JSON.stringify(currentUser)
+        alert(
+            "Le pseudo doit contenir au moins 2 caractères."
         );
 
-        document.getElementById(
-            "settingsUsername"
-        ).textContent = username;
-
-        alert("Ton pseudo a été modifié.");
-
+        return;
     }
 
+    if (username.length > 30) {
+
+        alert(
+            "Le pseudo ne peut pas dépasser 30 caractères."
+        );
+
+        return;
+    }
+
+    try {
+
+        const response =
+            await fetch(
+                "/api/account/username",
+                {
+                    method: "PUT",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    credentials: "include",
+
+                    body: JSON.stringify({
+                        username
+                    })
+                }
+            );
+
+        const data =
+            await response.json();
+
+        if (!response.ok) {
+
+            alert(
+                data.error ||
+                "Impossible de modifier le pseudo."
+            );
+
+            return;
+        }
+
+        currentUser.username =
+            username;
+
+        const usernameElement =
+            document.getElementById(
+                "settingsUsername"
+            );
+
+        if (usernameElement) {
+            usernameElement.textContent =
+                username;
+        }
+
+        alert(
+            "Ton pseudo a été modifié."
+        );
+
+    } catch (error) {
+
+        console.error(error);
+
+        alert(
+            "Impossible de contacter le serveur."
+        );
+    }
 }
 
 
-function changePassword(){
+/* ========================= */
+/* MODIFIER LE MOT DE PASSE */
+/* ========================= */
+
+async function changePassword() {
 
     const newPassword =
-        prompt("Entre ton nouveau mot de passe :");
+        prompt(
+            "Entre ton nouveau mot de passe :"
+        );
 
-    if(!newPassword) return;
+    if (newPassword === null) {
+        return;
+    }
 
-    if(newPassword.length < 6){
+    if (newPassword.length < 6) {
 
         alert(
             "Le mot de passe doit contenir au moins 6 caractères."
@@ -1537,27 +1688,88 @@ function changePassword(){
         return;
     }
 
-    /*
-     * Pour l'instant, on ne modifie pas réellement
-     * le mot de passe côté serveur.
-     *
-     * On branchera cette fonction sur ton système
-     * d'authentification actuel ensuite.
-     */
+    const confirmation =
+        prompt(
+            "Confirme ton nouveau mot de passe :"
+        );
 
-    alert(
-        "La modification du mot de passe sera bientôt disponible."
-    );
+    if (confirmation === null) {
+        return;
+    }
 
+    if (newPassword !== confirmation) {
+
+        alert(
+            "Les mots de passe ne correspondent pas."
+        );
+
+        return;
+    }
+
+    try {
+
+        const response =
+            await fetch(
+                "/api/account/password",
+                {
+                    method: "PUT",
+
+                    headers: {
+                        "Content-Type":
+                            "application/json"
+                    },
+
+                    credentials: "include",
+
+                    body: JSON.stringify({
+                        password:
+                            newPassword
+                    })
+                }
+            );
+
+        const data =
+            await response.json();
+
+        if (!response.ok) {
+
+            alert(
+                data.error ||
+                "Impossible de modifier le mot de passe."
+            );
+
+            return;
+        }
+
+        alert(
+            "Ton mot de passe a été modifié."
+        );
+
+    } catch (error) {
+
+        console.error(error);
+
+        alert(
+            "Impossible de contacter le serveur."
+        );
+    }
 }
 
 
-function changeTheme(){
+/* ========================= */
+/* CHANGER LE THÈME */
+/* ========================= */
+
+function changeTheme() {
 
     const themeSelect =
-        document.getElementById("themeSelect");
+        document.getElementById(
+            "themeSelect"
+        );
 
-    if(!themeSelect) return;
+    if (!themeSelect) {
+        return;
+    }
 
     const theme =
         themeSelect.value;
@@ -1567,37 +1779,134 @@ function changeTheme(){
         theme
     );
 
-
-    if(theme === "dark"){
-
-        document.body.classList.add("dark-theme");
-
-    }else{
-
-        document.body.classList.remove("dark-theme");
-
-    }
-
+    applyTheme(theme);
 }
 
 
-function deleteAccount(){
+/* ========================= */
+/* APPLIQUER LE THÈME */
+/* ========================= */
+
+function applyTheme(theme) {
+
+    if (theme === "dark") {
+
+        document.body.classList.add(
+            "dark-theme"
+        );
+
+    } else {
+
+        document.body.classList.remove(
+            "dark-theme"
+        );
+    }
+}
+
+
+/* ========================= */
+/* SUPPRIMER LE COMPTE */
+/* ========================= */
+
+async function deleteAccount() {
 
     const confirmation =
         confirm(
             "⚠️ Es-tu sûr de vouloir supprimer ton compte ?\n\n" +
-            "Cette action est définitive."
+            "Toutes tes données seront supprimées définitivement."
         );
 
-    if(!confirmation) return;
+    if (!confirmation) {
+        return;
+    }
 
-    /*
-     * À connecter au serveur pour supprimer
-     * réellement le compte de la base de données.
-     */
+    const secondConfirmation =
+        prompt(
+            'Pour confirmer, écris "SUPPRIMER".'
+        );
 
-    alert(
-        "La suppression définitive du compte sera ajoutée avec le système serveur."
-    );
+    if (
+        secondConfirmation !==
+        "SUPPRIMER"
+    ) {
 
+        alert(
+            "Suppression annulée."
+        );
+
+        return;
+    }
+
+    try {
+
+        const response =
+            await fetch(
+                "/api/account",
+                {
+                    method: "DELETE",
+                    credentials: "include"
+                }
+            );
+
+        const data =
+            await response.json();
+
+        if (!response.ok) {
+
+            alert(
+                data.error ||
+                "Impossible de supprimer le compte."
+            );
+
+            return;
+        }
+
+        alert(
+            "Ton compte a été supprimé."
+        );
+
+        currentUser = null;
+
+        document.getElementById(
+            "app"
+        ).style.display = "none";
+
+        document.getElementById(
+            "settingsPage"
+        ).style.display = "none";
+
+        document.getElementById(
+            "loginScreen"
+        ).style.display = "block";
+
+        showLogin();
+
+    } catch (error) {
+
+        console.error(
+            "Erreur suppression compte :",
+            error
+        );
+
+        alert(
+            "Impossible de contacter le serveur."
+        );
+    }
 }
+
+
+/* ========================= */
+/* BOUTON PARAMÈTRES */
+/* ========================= */
+
+settingsButton?.addEventListener(
+    "click",
+    () => {
+
+        profileDropdown?.classList.remove(
+            "open"
+        );
+
+        openSettings();
+    }
+);
