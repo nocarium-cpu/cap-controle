@@ -205,7 +205,7 @@ function applyDarkModeFixes(dark) {
 function loadTheme() {
 
     const savedTheme =
-        localStorage.getItem("capControleTheme") || "light";
+        localStorage.getItem("capControleTheme") || "dark";
 
     applyTheme(savedTheme);
 }
