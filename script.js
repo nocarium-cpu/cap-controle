@@ -3508,7 +3508,7 @@ window.addEventListener(
             }
 
 
-            /* ========================= */
+                        /* ========================= */
             /* PAS CONNECTÉ               */
             /* ========================= */
 
@@ -3516,21 +3516,13 @@ window.addEventListener(
                 document.getElementById("intro");
 
             const onboarding =
-                document.getElementById(
-                    "onboarding"
-                );
+                document.getElementById("onboarding");
 
             const success =
-                document.getElementById(
-                    "success"
-                );
+                document.getElementById("success");
 
             const app =
                 document.getElementById("app");
-
-            if (intro) {
-                intro.classList.add("hidden");
-            }
 
             if (onboarding) {
                 onboarding.classList.add("hidden");
@@ -3545,31 +3537,46 @@ window.addEventListener(
             }
 
             const loginScreen =
-                document.getElementById(
-                    "loginScreen"
+                document.getElementById("loginScreen");
+
+            const showLoginAfterIntro = () => {
+
+                if (intro) {
+                    intro.classList.add("hidden");
+                }
+
+                if (loginScreen) {
+                    loginScreen.style.display = "block";
+                }
+            };
+
+            const loadingBar =
+                document.querySelector(".loading-bar div");
+
+            if (loadingBar) {
+
+                let finished = false;
+
+                const finishOnce = () => {
+
+                    if (finished) {
+                        return;
+                    }
+
+                    finished = true;
+
+                    setTimeout(showLoginAfterIntro, 150);
+                };
+
+                loadingBar.addEventListener(
+                    "animationend",
+                    finishOnce,
+                    { once: true }
                 );
 
-            if (loginScreen) {
-                loginScreen.style.display =
-                    "block";
+                setTimeout(finishOnce, 3500);
+
+            } else {
+
+                setTimeout(showLoginAfterIntro, 2200);
             }
-
-        } catch (error) {
-
-            console.error(
-                "Erreur vérification session :",
-                error
-            );
-
-            const loginScreen =
-                document.getElementById(
-                    "loginScreen"
-                );
-
-            if (loginScreen) {
-                loginScreen.style.display =
-                    "block";
-            }
-        }
-    }
-);
