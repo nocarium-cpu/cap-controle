@@ -1635,7 +1635,7 @@ async function loadSettings() {
     const savedTheme =
         localStorage.getItem(
             "capControleTheme"
-        ) || "light";
+        ) || "dark";
 
     if (themeSelect) {
         themeSelect.value = savedTheme;
