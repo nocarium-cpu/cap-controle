@@ -1924,3 +1924,716 @@ function loadTheme() {
 }
 
 window.addEventListener("load", loadTheme);
+
+/* ================================================= */
+/*                  ONBOARDING                       */
+/* ================================================= */
+
+let onboardingStep = 1;
+
+const onboardingData = {
+    role: null,
+    class: null,
+    subjects: [],
+    objective: null,
+    time: null
+};
+
+
+/* ================================================= */
+/*              UTILITAIRES ONBOARDING               */
+/* ================================================= */
+
+function getOnboardingKey() {
+    if (currentUser?.email) {
+        return "capControleOnboarding_" +
+            currentUser.email.toLowerCase();
+    }
+
+    return "capControleOnboarding";
+}
+
+
+function hasCompletedOnboarding() {
+    return localStorage.getItem(
+        getOnboardingKey()
+    ) === "true";
+}
+
+
+function saveOnboarding() {
+    localStorage.setItem(
+        getOnboardingKey(),
+        "true"
+    );
+
+    localStorage.setItem(
+        getOnboardingKey() + "_data",
+        JSON.stringify(onboardingData)
+    );
+}
+
+
+function loadOnboardingData() {
+    try {
+        const saved = localStorage.getItem(
+            getOnboardingKey() + "_data"
+        );
+
+        if (!saved) return;
+
+        const data = JSON.parse(saved);
+
+        if (data && typeof data === "object") {
+            Object.assign(
+                onboardingData,
+                data
+            );
+        }
+
+    } catch (error) {
+        console.error(
+            "Erreur chargement onboarding :",
+            error
+        );
+    }
+}
+
+
+/* ================================================= */
+/*                AFFICHAGE ÉCRANS                   */
+/* ================================================= */
+
+function showIntro() {
+
+    const intro =
+        document.getElementById("intro");
+
+    const onboarding =
+        document.getElementById("onboarding");
+
+    const success =
+        document.getElementById("success");
+
+    if (intro) {
+        intro.classList.remove("hidden");
+    }
+
+    if (onboarding) {
+        onboarding.classList.add("hidden");
+    }
+
+    if (success) {
+        success.classList.add("hidden");
+    }
+
+    setTimeout(() => {
+
+        if (intro) {
+            intro.classList.add("hidden");
+        }
+
+        if (onboarding) {
+            onboarding.classList.remove("hidden");
+        }
+
+        onboardingStep = 1;
+
+        updateOnboarding();
+
+    }, 1900);
+}
+
+
+function showSuccess() {
+
+    const onboarding =
+        document.getElementById("onboarding");
+
+    const success =
+        document.getElementById("success");
+
+    if (onboarding) {
+        onboarding.classList.add("hidden");
+    }
+
+    if (success) {
+        success.classList.remove("hidden");
+    }
+
+    const summary =
+        document.getElementById("profileSummary");
+
+    if (!summary) return;
+
+    summary.innerHTML = `
+        <strong>Ton profil</strong><br><br>
+
+        🎓 ${
+            onboardingData.role === "eleve"
+                ? "Élève"
+                : "Professeur"
+        }<br>
+
+        ${
+            onboardingData.class
+                ? "📚 Classe : " +
+                  escapeHTML(
+                      onboardingData.class
+                  ) +
+                  "<br>"
+                : ""
+        }
+
+        ${
+            onboardingData.subjects.length
+                ? "📖 Matières : " +
+                  onboardingData.subjects
+                    .map(
+                        subject =>
+                            escapeHTML(subject)
+                    )
+                    .join(", ") +
+                  "<br>"
+                : ""
+        }
+
+        🎯 Objectif : ${
+            getObjectiveLabel(
+                onboardingData.objective
+            )
+        }<br>
+
+        ⏱️ Temps disponible : ${
+            onboardingData.time
+        } min
+    `;
+}
+
+
+function showApp() {
+
+    const intro =
+        document.getElementById("intro");
+
+    const onboarding =
+        document.getElementById("onboarding");
+
+    const success =
+        document.getElementById("success");
+
+    const loginScreen =
+        document.getElementById("loginScreen");
+
+    const app =
+        document.getElementById("app");
+
+    if (intro) {
+        intro.classList.add("hidden");
+    }
+
+    if (onboarding) {
+        onboarding.classList.add("hidden");
+    }
+
+    if (success) {
+        success.classList.add("hidden");
+    }
+
+    if (loginScreen) {
+        loginScreen.style.display = "none";
+    }
+
+    if (app) {
+        app.style.display = "block";
+    }
+}
+
+
+/* ================================================= */
+/*                 ÉTAPES                            */
+/* ================================================= */
+
+function updateOnboarding() {
+
+    const steps =
+        document.querySelectorAll(
+            "#steps .step"
+        );
+
+    steps.forEach(step => {
+
+        const stepNumber =
+            Number(
+                step.dataset.step
+            );
+
+        step.classList.toggle(
+            "active",
+            stepNumber === onboardingStep
+        );
+
+    });
+
+
+    const progressBar =
+        document.getElementById(
+            "progressBar"
+        );
+
+    const stepNumber =
+        document.getElementById(
+            "stepNumber"
+        );
+
+    if (progressBar) {
+
+        progressBar.style.width =
+            `${(
+                onboardingStep / 6
+            ) * 100}%`;
+
+    }
+
+    if (stepNumber) {
+
+        stepNumber.textContent =
+            `${onboardingStep}/6`;
+
+    }
+
+
+    updateContinueButton();
+}
+
+
+function updateContinueButton() {
+
+    const currentStep =
+        document.querySelector(
+            `.step[data-step="${onboardingStep}"]`
+        );
+
+    if (!currentStep) return;
+
+    const button =
+        currentStep.querySelector(
+            ".next-button"
+        );
+
+    if (!button) return;
+
+    let valid = false;
+
+    switch (onboardingStep) {
+
+        case 1:
+            valid = true;
+            break;
+
+        case 2:
+            valid =
+                onboardingData.role !== null;
+            break;
+
+        case 3:
+            valid =
+                onboardingData.class !== null;
+            break;
+
+        case 4:
+            valid =
+                onboardingData.subjects.length > 0;
+            break;
+
+        case 5:
+            valid =
+                onboardingData.objective !== null;
+            break;
+    }
+
+    button.classList.toggle(
+        "disabled",
+        !valid
+    );
+
+    button.disabled = !valid;
+}
+
+
+/* ================================================= */
+/*                BOUTON RETOUR                      */
+/* ================================================= */
+
+document
+    .getElementById("backButton")
+    ?.addEventListener(
+        "click",
+        () => {
+
+            if (onboardingStep <= 1) {
+                return;
+            }
+
+            onboardingStep--;
+
+            updateOnboarding();
+        }
+    );
+
+
+/* ================================================= */
+/*             BOUTONS CONTINUER                    */
+/* ================================================= */
+
+document
+    .querySelectorAll(".next-button")
+    .forEach(button => {
+
+        button.addEventListener(
+            "click",
+            () => {
+
+                if (
+                    button.disabled ||
+                    button.classList.contains(
+                        "disabled"
+                    )
+                ) {
+                    return;
+                }
+
+                if (
+                    onboardingStep < 6
+                ) {
+
+                    onboardingStep++;
+
+                    updateOnboarding();
+
+                }
+
+            }
+        );
+
+    });
+
+
+/* ================================================= */
+/*                   RÔLE                            */
+/* ================================================= */
+
+document
+    .querySelectorAll(
+        ".choice-card"
+    )
+    .forEach(card => {
+
+        card.addEventListener(
+            "click",
+            () => {
+
+                document
+                    .querySelectorAll(
+                        ".choice-card"
+                    )
+                    .forEach(
+                        element =>
+                            element.classList.remove(
+                                "selected"
+                            )
+                    );
+
+                card.classList.add(
+                    "selected"
+                );
+
+                onboardingData.role =
+                    card.dataset.value;
+
+                updateContinueButton();
+            }
+        );
+
+    });
+
+
+/* ================================================= */
+/*                   CLASSE                          */
+/* ================================================= */
+
+document
+    .querySelectorAll(
+        ".small-choice"
+    )
+    .forEach(button => {
+
+        button.addEventListener(
+            "click",
+            () => {
+
+                document
+                    .querySelectorAll(
+                        ".small-choice"
+                    )
+                    .forEach(
+                        element =>
+                            element.classList.remove(
+                                "selected"
+                            )
+                    );
+
+                button.classList.add(
+                    "selected"
+                );
+
+                onboardingData.class =
+                    button.dataset.value;
+
+                updateContinueButton();
+            }
+        );
+
+    });
+
+
+/* ================================================= */
+/*                  MATIÈRES                         */
+/* ================================================= */
+
+document
+    .querySelectorAll(
+        ".subject"
+    )
+    .forEach(button => {
+
+        button.addEventListener(
+            "click",
+            () => {
+
+                const value =
+                    button.dataset.value;
+
+                button.classList.toggle(
+                    "selected"
+                );
+
+                if (
+                    onboardingData.subjects
+                        .includes(value)
+                ) {
+
+                    onboardingData.subjects =
+                        onboardingData.subjects
+                            .filter(
+                                subject =>
+                                    subject !== value
+                            );
+
+                } else {
+
+                    onboardingData.subjects.push(
+                        value
+                    );
+
+                }
+
+                updateContinueButton();
+            }
+        );
+
+    });
+
+
+/* ================================================= */
+/*                  OBJECTIF                         */
+/* ================================================= */
+
+document
+    .querySelectorAll(
+        ".objective"
+    )
+    .forEach(button => {
+
+        button.addEventListener(
+            "click",
+            () => {
+
+                document
+                    .querySelectorAll(
+                        ".objective"
+                    )
+                    .forEach(
+                        element =>
+                            element.classList.remove(
+                                "selected"
+                            )
+                    );
+
+                button.classList.add(
+                    "selected"
+                );
+
+                onboardingData.objective =
+                    button.dataset.value;
+
+                updateContinueButton();
+            }
+        );
+
+    });
+
+
+/* ================================================= */
+/*                    TEMPS                          */
+/* ================================================= */
+
+document
+    .querySelectorAll(
+        ".time-choice"
+    )
+    .forEach(button => {
+
+        button.addEventListener(
+            "click",
+            () => {
+
+                document
+                    .querySelectorAll(
+                        ".time-choice"
+                    )
+                    .forEach(
+                        element =>
+                            element.classList.remove(
+                                "selected"
+                            )
+                    );
+
+                button.classList.add(
+                    "selected"
+                );
+
+                onboardingData.time =
+                    button.dataset.value;
+
+                const finishButton =
+                    document.getElementById(
+                        "finishButton"
+                    );
+
+                if (finishButton) {
+
+                    finishButton.classList.remove(
+                        "disabled"
+                    );
+
+                    finishButton.disabled =
+                        false;
+                }
+
+            }
+        );
+
+    });
+
+
+/* ================================================= */
+/*                 OBJECTIFS LABELS                  */
+/* ================================================= */
+
+function getObjectiveLabel(value) {
+
+    const labels = {
+
+        notes:
+            "Améliorer mes notes",
+
+        controle:
+            "Préparer un contrôle",
+
+        bac:
+            "Préparer un examen",
+
+        regularite:
+            "Réviser régulièrement",
+
+        retard:
+            "Rattraper mon retard"
+
+    };
+
+    return escapeHTML(
+        labels[value] || "Non renseigné"
+    );
+}
+
+
+/* ================================================= */
+/*              TERMINER ONBOARDING                  */
+/* ================================================= */
+
+document
+    .getElementById("finishButton")
+    ?.addEventListener(
+        "click",
+        async () => {
+
+            const button =
+                document.getElementById(
+                    "finishButton"
+                );
+
+            if (
+                !onboardingData.time ||
+                button?.disabled
+            ) {
+                return;
+            }
+
+            saveOnboarding();
+
+            showSuccess();
+
+        }
+    );
+
+
+/* ================================================= */
+/*              DÉCOUVRIR L'APPLICATION              */
+/* ================================================= */
+
+document
+    .getElementById("discoverButton")
+    ?.addEventListener(
+        "click",
+        async () => {
+
+            showApp();
+
+            await loadControls();
+            await loadAccountData();
+
+        }
+    );
+
+
+/* ================================================= */
+/*          DÉMARRER ONBOARDING POUR COMPTE          */
+/* ================================================= */
+
+async function startAccountExperience() {
+
+    loadOnboardingData();
+
+    if (hasCompletedOnboarding()) {
+
+        showApp();
+
+        await loadControls();
+        await loadAccountData();
+
+        return;
+    }
+
+    showIntro();
+}
