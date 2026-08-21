@@ -1991,7 +1991,7 @@ settingsButton?.addEventListener(
 
 function loadTheme() {
     const savedTheme =
-        localStorage.getItem("capControleTheme") || "light";
+        localStorage.getItem("capControleTheme") || "dark";
 
     if (savedTheme === "dark") {
         document.body.classList.add("dark-theme");
