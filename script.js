@@ -2111,21 +2111,52 @@ function showIntro() {
         success.classList.add("hidden");
     }
 
-    setTimeout(() => {
+    // Attend la fin de l'animation de chargement
+    const loadingBar =
+        document.querySelector("#intro .loading-bar");
 
-        if (intro) {
-            intro.classList.add("hidden");
-        }
+    if (loadingBar) {
 
-        if (onboarding) {
-            onboarding.classList.remove("hidden");
-        }
+        loadingBar.addEventListener(
+            "animationend",
+            () => {
 
-        onboardingStep = 1;
+                if (intro) {
+                    intro.classList.add("hidden");
+                }
 
-        updateOnboarding();
+                if (onboarding) {
+                    onboarding.classList.remove("hidden");
+                }
 
-    }, 1900);
+                onboardingStep = 1;
+
+                updateOnboarding();
+
+            },
+            { once: true }
+        );
+
+    } else {
+
+        // Sécurité si la barre n'existe pas
+        setTimeout(() => {
+
+            if (intro) {
+                intro.classList.add("hidden");
+            }
+
+            if (onboarding) {
+                onboarding.classList.remove("hidden");
+            }
+
+            onboardingStep = 1;
+
+            updateOnboarding();
+
+        }, 3000);
+
+    }
 }
 
 
