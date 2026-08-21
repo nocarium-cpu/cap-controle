@@ -2704,7 +2704,6 @@ function showIntro() {
     }
 
     if (intro) {
-
         intro.classList.remove("hidden");
         intro.style.display = "flex";
     }
@@ -2717,27 +2716,74 @@ function showIntro() {
         success.classList.add("hidden");
     }
 
-    setTimeout(
-        () => {
+    /*
+     * On attend la fin réelle de l'animation
+     * de la barre de chargement.
+     */
+    const loadingBar =
+        document.querySelector(".loading-bar div");
 
-            if (intro) {
-                intro.classList.add("hidden");
+    const finishIntro = () => {
+
+        if (intro) {
+            intro.classList.add("hidden");
+            intro.style.display = "none";
+        }
+
+        if (onboarding) {
+
+            onboarding.classList.remove("hidden");
+
+            onboardingStep = 1;
+
+            updateOnboarding();
+        }
+    };
+
+    if (loadingBar) {
+
+        let finished = false;
+
+        const finishOnce = () => {
+
+            if (finished) {
+                return;
             }
 
-            if (onboarding) {
+            finished = true;
 
-                onboarding.classList.remove(
-                    "hidden"
-                );
+            setTimeout(
+                finishIntro,
+                150
+            );
+        };
 
-                onboardingStep = 1;
+        loadingBar.addEventListener(
+            "animationend",
+            finishOnce,
+            { once: true }
+        );
 
-                updateOnboarding();
-            }
+        /*
+         * Sécurité : si le navigateur ne déclenche
+         * pas animationend, l'intro ne reste pas bloquée.
+         */
+        setTimeout(
+            finishOnce,
+            2500
+        );
 
-        },
-        2200
-    );
+    } else {
+
+        /*
+         * Si aucune barre n'existe,
+         * on garde un délai de secours.
+         */
+        setTimeout(
+            finishIntro,
+            2200
+        );
+    }
 }
 
 
