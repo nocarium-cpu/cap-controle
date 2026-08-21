@@ -992,3 +992,119 @@ select{
     }
 
 }
+
+/* ========================= */
+/* THÈME SOMBRE              */
+/* ========================= */
+
+body.dark-theme {
+    background: #1e1b18;
+    color: #eee6dc;
+}
+
+body.dark-theme h1 {
+    color: #f0e5d7;
+}
+
+body.dark-theme .card,
+body.dark-theme .stat,
+body.dark-theme .history-card,
+body.dark-theme .settings-card,
+body.dark-theme #loginScreen,
+body.dark-theme .ai-card {
+    background: #292522;
+    border-color: #494139;
+    color: #eee6dc;
+}
+
+body.dark-theme .next-exam {
+    background: linear-gradient(
+        135deg,
+        #8f7049,
+        #aa8a60
+    );
+    color: white;
+}
+
+body.dark-theme .today-item {
+    background: #211e1b;
+}
+
+body.dark-theme input,
+body.dark-theme #courseInput,
+body.dark-theme select {
+    background: #211e1b;
+    color: #eee6dc;
+    border-color: #494139;
+}
+
+body.dark-theme input::placeholder,
+body.dark-theme #courseInput::placeholder {
+    color: #9f958a;
+}
+
+body.dark-theme input:focus {
+    border-color: #b99669;
+}
+
+body.dark-theme .profile-button {
+    background: #292522;
+    color: #d0ad7c;
+    border-color: #494139;
+}
+
+body.dark-theme .profile-button:hover {
+    background: #332e29;
+}
+
+body.dark-theme .profile-dropdown {
+    background: #292522;
+    border-color: #494139;
+}
+
+body.dark-theme .profile-menu-item {
+    color: #eee6dc;
+}
+
+body.dark-theme .profile-menu-item:hover {
+    background: #332e29;
+    color: #d0ad7c;
+}
+
+body.dark-theme .settings-card h2,
+body.dark-theme .settings-item strong {
+    color: #f0e5d7;
+}
+
+body.dark-theme .settings-item {
+    border-color: #494139;
+}
+
+body.dark-theme .settings-item p {
+    color: #a9a097;
+}
+
+body.dark-theme .settings-item select {
+    background: #211e1b;
+    color: #eee6dc;
+    border-color: #494139;
+}
+
+body.dark-theme .back-settings-btn {
+    background: #292522;
+    color: #eee6dc;
+    border-color: #494139;
+}
+
+body.dark-theme .back-settings-btn:hover {
+    background: #332e29;
+}
+
+body.dark-theme .quiz-card {
+    background: #211e1b;
+    color: #eee6dc;
+}
+
+body.dark-theme .copyright {
+    color: #9f958a;
+}
