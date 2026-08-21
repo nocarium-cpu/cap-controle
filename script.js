@@ -4,7 +4,10 @@ let bestStreak = 0;
 let controls = [];
 let history = [];
 
+let currentUser = null;
+
 const controlsContainer = document.getElementById("controls");
+
 
 /* ================================================= */
 /*                    CONTRÔLES                      */
@@ -28,6 +31,7 @@ async function loadControls() {
         }
 
         render();
+
     } catch (error) {
         console.error("Erreur chargement contrôles :", error);
     }
@@ -36,9 +40,9 @@ async function loadControls() {
 document.getElementById("addBtn")?.addEventListener("click", addControl);
 
 async function addControl() {
-    const subject = document.getElementById("subject").value.trim();
-    const chapter = document.getElementById("chapter").value.trim();
-    const date = document.getElementById("date").value;
+    const subject = document.getElementById("subject")?.value.trim();
+    const chapter = document.getElementById("chapter")?.value.trim();
+    const date = document.getElementById("date")?.value;
 
     if (!subject || !chapter || !date) {
         alert("Remplis tous les champs.");
@@ -67,16 +71,19 @@ async function addControl() {
         }
 
         controls.push(data.control);
+
         render();
 
         document.getElementById("subject").value = "";
         document.getElementById("chapter").value = "";
         document.getElementById("date").value = "";
+
     } catch (error) {
         console.error(error);
         alert("Impossible de contacter le serveur.");
     }
 }
+
 
 /* ================================================= */
 /*                  DONNÉES COMPTE                   */
@@ -108,10 +115,12 @@ async function loadAccountData() {
 
         render();
         renderHistory();
+
     } catch (error) {
         console.error("Erreur chargement données compte :", error);
     }
 }
+
 
 async function saveStats() {
     try {
@@ -130,10 +139,12 @@ async function saveStats() {
         if (!response.ok) {
             console.error("Impossible de sauvegarder la série.");
         }
+
     } catch (error) {
         console.error("Erreur sauvegarde série :", error);
     }
 }
+
 
 /* ================================================= */
 /*                     DATES                         */
@@ -163,6 +174,7 @@ function getDaysLeft(date) {
     );
 }
 
+
 function formatDate(dateString) {
     const date = new Date(dateString);
 
@@ -176,19 +188,21 @@ function formatDate(dateString) {
     });
 }
 
+
 /* ================================================= */
 /*                    CONNEXION                      */
 /* ================================================= */
 
 async function login() {
-    const email = document
-        .getElementById("loginEmail")
-        .value
-        .trim();
+    const emailElement = document.getElementById("loginEmail");
+    const passwordElement = document.getElementById("loginPassword");
 
-    const password = document
-        .getElementById("loginPassword")
-        .value;
+    if (!emailElement || !passwordElement) {
+        return;
+    }
+
+    const email = emailElement.value.trim();
+    const password = passwordElement.value;
 
     if (!email || !password) {
         alert("Remplis tous les champs.");
@@ -218,45 +232,54 @@ async function login() {
         const meResponse = await fetch("/me", {
             credentials: "include"
         });
-        
+
         if (meResponse.ok) {
             const meData = await meResponse.json();
-        
+
             if (meData.user) {
                 currentUser = meData.user;
             }
         }
-        
+
         await startAccountExperience();
-        
+
     } catch (error) {
         console.error(error);
         alert("Impossible de contacter le serveur.");
     }
 }
 
+
 /* ================================================= */
 /*                   INSCRIPTION                     */
 /* ================================================= */
 
 async function register() {
-    const username = document
-        .getElementById("registerUsername")
-        .value
-        .trim();
+    const usernameElement =
+        document.getElementById("registerUsername");
 
-    const email = document
-        .getElementById("registerEmail")
-        .value
-        .trim();
+    const emailElement =
+        document.getElementById("registerEmail");
 
-    const password = document
-        .getElementById("registerPassword")
-        .value;
+    const passwordElement =
+        document.getElementById("registerPassword");
 
-    const confirmPassword = document
-        .getElementById("registerPasswordConfirm")
-        .value;
+    const confirmPasswordElement =
+        document.getElementById("registerPasswordConfirm");
+
+    if (
+        !usernameElement ||
+        !emailElement ||
+        !passwordElement ||
+        !confirmPasswordElement
+    ) {
+        return;
+    }
+
+    const username = usernameElement.value.trim();
+    const email = emailElement.value.trim();
+    const password = passwordElement.value;
+    const confirmPassword = confirmPasswordElement.value;
 
     if (!username || !email || !password || !confirmPassword) {
         alert("Remplis tous les champs.");
@@ -291,36 +314,65 @@ async function register() {
             );
             return;
         }
+
         const meResponse = await fetch("/me", {
             credentials: "include"
         });
-        
+
         if (meResponse.ok) {
             const meData = await meResponse.json();
-        
+
             if (meData.user) {
                 currentUser = meData.user;
             }
         }
-        
+
         await startAccountExperience();
+
     } catch (error) {
         console.error(error);
         alert("Impossible de contacter le serveur.");
     }
 }
 
+
 function showRegister() {
-    document.getElementById("loginForm").style.display = "none";
-    document.getElementById("registerForm").style.display = "block";
-    document.getElementById("authTitle").textContent = "Créer un compte";
+    const loginForm = document.getElementById("loginForm");
+    const registerForm = document.getElementById("registerForm");
+    const authTitle = document.getElementById("authTitle");
+
+    if (loginForm) {
+        loginForm.style.display = "none";
+    }
+
+    if (registerForm) {
+        registerForm.style.display = "block";
+    }
+
+    if (authTitle) {
+        authTitle.textContent = "Créer un compte";
+    }
 }
 
+
 function showLogin() {
-    document.getElementById("registerForm").style.display = "none";
-    document.getElementById("loginForm").style.display = "block";
-    document.getElementById("authTitle").textContent = "Connexion";
+    const loginForm = document.getElementById("loginForm");
+    const registerForm = document.getElementById("registerForm");
+    const authTitle = document.getElementById("authTitle");
+
+    if (registerForm) {
+        registerForm.style.display = "none";
+    }
+
+    if (loginForm) {
+        loginForm.style.display = "block";
+    }
+
+    if (authTitle) {
+        authTitle.textContent = "Connexion";
+    }
 }
+
 
 /* ================================================= */
 /*                    RÉVISION                       */
@@ -369,11 +421,13 @@ async function revise(index, minutes) {
         await updateStreak();
 
         render();
+
     } catch (error) {
         console.error(error);
         alert("Impossible de contacter le serveur.");
     }
 }
+
 
 /* ================================================= */
 /*                     AFFICHAGE                     */
@@ -391,9 +445,14 @@ function render() {
 
     controlsContainer.innerHTML = "";
 
-    const dashboard = document.getElementById("dashboard");
-    const nextExamCard = document.getElementById("nextExam");
-    const todayRevision = document.getElementById("todayRevision");
+    const dashboard =
+        document.getElementById("dashboard");
+
+    const nextExamCard =
+        document.getElementById("nextExam");
+
+    const todayRevision =
+        document.getElementById("todayRevision");
 
     const futureControls = controls.filter(
         control => getDaysLeft(control.date) >= 0
@@ -489,6 +548,7 @@ function render() {
                     </div>
                 `;
             });
+
         } else {
             todayRevision.innerHTML = `
                 <h2>Tout est révisé !</h2>
@@ -507,7 +567,8 @@ function render() {
             className = "soon";
         }
 
-        const progress = Number(control.progress) || 0;
+        const progress =
+            Number(control.progress) || 0;
 
         controlsContainer.innerHTML += `
             <div class="card control">
@@ -574,6 +635,7 @@ function render() {
     });
 }
 
+
 /* ================================================= */
 /*                SUPPRESSION CONTRÔLE               */
 /* ================================================= */
@@ -606,23 +668,32 @@ async function removeControl(index) {
         }
 
         controls.splice(index, 1);
+
         render();
+
     } catch (error) {
         console.error(error);
         alert("Impossible de contacter le serveur.");
     }
 }
 
+
 /* ================================================= */
 /*                  FICHE IA                         */
 /* ================================================= */
 
 async function generateRevisionSheet() {
-    const resultDiv = document.getElementById("aiResult");
+    const resultDiv =
+        document.getElementById("aiResult");
 
-    const course = document
-        .getElementById("courseInput")
-        .value;
+    const courseInput =
+        document.getElementById("courseInput");
+
+    if (!resultDiv || !courseInput) {
+        return;
+    }
+
+    const course = courseInput.value;
 
     if (!course.trim()) {
         alert("Colle un cours avant de générer une fiche.");
@@ -695,6 +766,7 @@ async function generateRevisionSheet() {
 
         renderHistory();
         displayRevisionSheet(data);
+
     } catch (error) {
         console.error(error);
 
@@ -709,8 +781,14 @@ async function generateRevisionSheet() {
     }
 }
 
+
 function displayRevisionSheet(data) {
-    const resultDiv = document.getElementById("aiResult");
+    const resultDiv =
+        document.getElementById("aiResult");
+
+    if (!resultDiv) {
+        return;
+    }
 
     resultDiv.innerHTML = `
         <div class="ai-card">
@@ -779,6 +857,7 @@ function displayRevisionSheet(data) {
         </div>
     `;
 }
+
 
 /* ================================================= */
 /*                  HISTORIQUE                       */
@@ -858,6 +937,7 @@ function renderHistory() {
     });
 }
 
+
 /* ================================================= */
 /*                 OUVRIR HISTORIQUE                 */
 /* ================================================= */
@@ -882,6 +962,7 @@ function loadHistory(index) {
         });
     }
 }
+
 
 /* ================================================= */
 /*                  RENOMMER                         */
@@ -929,26 +1010,20 @@ async function renameHistory(index) {
             return;
         }
 
-        /*
-         * CORRECTION :
-         * Le serveur renvoie maintenant la fiche complète.
-         */
         if (data.history) {
             history[index] = data.history;
         } else {
-            /*
-             * Sécurité si une ancienne réponse serveur
-             * est encore utilisée.
-             */
             history[index].course = newName.trim();
         }
 
         renderHistory();
+
     } catch (error) {
         console.error(error);
         alert("Impossible de contacter le serveur.");
     }
 }
+
 
 /* ================================================= */
 /*                  SUPPRIMER                        */
@@ -989,12 +1064,15 @@ async function deleteHistory(index) {
         }
 
         history.splice(index, 1);
+
         renderHistory();
+
     } catch (error) {
         console.error(error);
         alert("Impossible de contacter le serveur.");
     }
 }
+
 
 /* ================================================= */
 /*                    PARTAGE                        */
@@ -1009,11 +1087,6 @@ async function shareHistory(index) {
     }
 
     try {
-        /*
-         * CORRECTION :
-         * On envoie l'ID de la fiche.
-         * Le serveur récupère course + result dans MongoDB.
-         */
         const response = await fetch("/share", {
             method: "POST",
             headers: {
@@ -1039,11 +1112,13 @@ async function shareHistory(index) {
             "Code de partage :",
             data.code
         );
+
     } catch (error) {
         console.error(error);
         alert("Impossible de contacter le serveur.");
     }
 }
+
 
 /* ================================================= */
 /*                    IMPORT                         */
@@ -1113,11 +1188,13 @@ async function importSheet() {
         renderHistory();
 
         alert("Fiche importée !");
+
     } catch (error) {
         console.error(error);
         alert("Impossible de contacter le serveur.");
     }
 }
+
 
 /* ================================================= */
 /*                    SÉRIE                          */
@@ -1166,6 +1243,7 @@ async function updateStreak() {
         }
 
         await saveStats();
+
     } catch (error) {
         console.error(
             "Erreur série :",
@@ -1173,6 +1251,7 @@ async function updateStreak() {
         );
     }
 }
+
 
 /* ================================================= */
 /*                 CHRONOMÈTRE                       */
@@ -1184,7 +1263,7 @@ function startRevision(index, button) {
             `revisionTime${index}`
         );
 
-    if (!select) {
+    if (!select || !button) {
         return;
     }
 
@@ -1221,6 +1300,7 @@ function startRevision(index, button) {
         }, 1000);
 }
 
+
 /* ================================================= */
 /*                  SÉCURITÉ HTML                    */
 /* ================================================= */
@@ -1233,6 +1313,7 @@ function escapeHTML(value) {
         .replace(/"/g, "&quot;")
         .replace(/'/g, "&#039;");
 }
+
 
 /* ================================================= */
 /*                   MENU PROFIL                     */
@@ -1250,6 +1331,7 @@ const settingsButton =
 const logoutButton =
     document.getElementById("logoutButton");
 
+
 settingsButton?.addEventListener(
     "click",
     () => {
@@ -1259,61 +1341,47 @@ settingsButton?.addEventListener(
 );
 
 
-/* Ouvrir / fermer le menu */
-
 profileButton?.addEventListener(
     "click",
     (event) => {
-
         event.stopPropagation();
 
-        profileDropdown?.classList.toggle(
-            "open"
-        );
-
+        profileDropdown?.classList.toggle("open");
     }
 );
 
-
-/* Empêcher le clic dans le menu de le fermer */
 
 profileDropdown?.addEventListener(
     "click",
     (event) => {
-
         event.stopPropagation();
-
     }
 );
 
-
-/* Fermer en cliquant ailleurs */
 
 document.addEventListener(
     "click",
     () => {
-
-        profileDropdown?.classList.remove(
-            "open"
-        );
-
+        profileDropdown?.classList.remove("open");
     }
 );
 
-/* Déconnexion */
+
+/* ================================================= */
+/*                  DÉCONNEXION                      */
+/* ================================================= */
 
 logoutButton?.addEventListener(
     "click",
     async () => {
 
         try {
-
             const response =
                 await fetch(
                     "/logout",
                     {
-                        method:"POST",
-                        credentials:"include"
+                        method: "POST",
+                        credentials: "include"
                     }
                 );
 
@@ -1321,38 +1389,34 @@ logoutButton?.addEventListener(
                 await response.json();
 
             if (!response.ok) {
-
                 alert(
                     data.error ||
                     "Impossible de se déconnecter."
                 );
-
                 return;
             }
 
-            profileDropdown?.classList.remove(
-                "open"
-            );
+            profileDropdown?.classList.remove("open");
 
-            document
-                .getElementById("app")
-                .style.display = "none";
+            const app =
+                document.getElementById("app");
 
-            document
-                .getElementById("loginScreen")
-                .style.display = "block";
+            const loginScreen =
+                document.getElementById("loginScreen");
 
-            /* Nettoyage des champs de connexion */
+            if (app) {
+                app.style.display = "none";
+            }
+
+            if (loginScreen) {
+                loginScreen.style.display = "block";
+            }
 
             const loginEmail =
-                document.getElementById(
-                    "loginEmail"
-                );
+                document.getElementById("loginEmail");
 
             const loginPassword =
-                document.getElementById(
-                    "loginPassword"
-                );
+                document.getElementById("loginPassword");
 
             if (loginEmail) {
                 loginEmail.value = "";
@@ -1362,12 +1426,11 @@ logoutButton?.addEventListener(
                 loginPassword.value = "";
             }
 
-            /* On revient sur l'écran connexion */
+            currentUser = null;
 
             showLogin();
 
         } catch (error) {
-
             console.error(
                 "Erreur déconnexion :",
                 error
@@ -1376,22 +1439,27 @@ logoutButton?.addEventListener(
             alert(
                 "Impossible de contacter le serveur."
             );
-
         }
-
     }
 );
 
+
 /* ================================================= */
-/*                INITIALISATION                    */
+/*                  INITIALISATION                   */
 /* ================================================= */
 
 window.addEventListener(
     "load",
     async () => {
 
-        try {
+        /* Charger immédiatement le thème */
+        loadTheme();
 
+        /*
+         * On attend la fin de l'intro avant
+         * de vérifier la session.
+         */
+        try {
             const response =
                 await fetch("/me", {
                     credentials: "include"
@@ -1399,11 +1467,6 @@ window.addEventListener(
 
             const data =
                 await response.json();
-
-
-            /* ========================= */
-            /* UTILISATEUR CONNECTÉ */
-            /* ========================= */
 
             if (data.loggedIn) {
 
@@ -1425,86 +1488,71 @@ window.addEventListener(
                 return;
             }
 
-
-            /* ========================= */
-            /* PAS CONNECTÉ */
-            /* ========================= */
-
             const intro =
-                document.getElementById(
-                    "intro"
-                );
+                document.getElementById("intro");
 
             const onboarding =
-                document.getElementById(
-                    "onboarding"
-                );
+                document.getElementById("onboarding");
 
             const success =
-                document.getElementById(
-                    "success"
-                );
+                document.getElementById("success");
 
             const app =
-                document.getElementById(
-                    "app"
-                );
-
-            if (intro) {
-                intro.classList.add(
-                    "hidden"
-                );
-            }
+                document.getElementById("app");
 
             if (onboarding) {
-                onboarding.classList.add(
-                    "hidden"
-                );
+                onboarding.classList.add("hidden");
             }
 
             if (success) {
-                success.classList.add(
-                    "hidden"
-                );
+                success.classList.add("hidden");
             }
 
             if (app) {
-                app.style.display =
-                    "none";
+                app.style.display = "none";
             }
 
             const loginScreen =
-                document.getElementById(
-                    "loginScreen"
-                );
+                document.getElementById("loginScreen");
 
-            if (loginScreen) {
-                loginScreen.style.display =
-                    "block";
+            /*
+             * L'intro est volontairement laissée
+             * visible ici.
+             */
+            if (intro) {
+                intro.classList.remove("hidden");
             }
 
-        } catch (error) {
+            /*
+             * L'écran de connexion sera affiché
+             * après l'intro par showIntro().
+             */
+            if (loginScreen) {
+                loginScreen.style.display = "none";
+            }
 
+            showIntro();
+
+        } catch (error) {
             console.error(
                 "Erreur vérification session :",
                 error
             );
 
+            /*
+             * Même en cas d'erreur serveur,
+             * on ne fait pas disparaître l'intro
+             * brutalement.
+             */
+            showIntro();
         }
-
     }
 );
+
 
 /* ================================================= */
 /*                    PARAMÈTRES                     */
 /* ================================================= */
-
-let currentUser = null;
-
-
-/* ========================= */
-/* OUVRIR LES PARAMÈTRES */
-/* ========================= */
 
 function openSettings() {
 
@@ -1512,12 +1560,16 @@ function openSettings() {
         document.getElementById("settingsPage");
 
     const profileMenu =
-        document.querySelector(".profile-menu-container");
+        document.querySelector(
+            ".profile-menu-container"
+        );
 
     const container =
         document.querySelector(".container");
 
-    if (!settingsPage) return;
+    if (!settingsPage) {
+        return;
+    }
 
     if (profileMenu) {
         profileMenu.style.display = "none";
@@ -1533,22 +1585,22 @@ function openSettings() {
 }
 
 
-/* ========================= */
-/* FERMER LES PARAMÈTRES */
-/* ========================= */
-
 function closeSettings() {
 
     const settingsPage =
         document.getElementById("settingsPage");
 
     const profileMenu =
-        document.querySelector(".profile-menu-container");
+        document.querySelector(
+            ".profile-menu-container"
+        );
 
     const container =
         document.querySelector(".container");
 
-    if (!settingsPage) return;
+    if (!settingsPage) {
+        return;
+    }
 
     settingsPage.style.display = "none";
 
@@ -1562,9 +1614,9 @@ function closeSettings() {
 }
 
 
-/* ========================= */
-/* CHARGER LE PROFIL */
-/* ========================= */
+/* ================================================= */
+/*                CHARGER PARAMÈTRES                 */
+/* ================================================= */
 
 async function loadSettings() {
 
@@ -1601,12 +1653,14 @@ async function loadSettings() {
 
         if (usernameElement) {
             usernameElement.textContent =
-                currentUser.username || "Non renseigné";
+                currentUser.username ||
+                "Non renseigné";
         }
 
         if (emailElement) {
             emailElement.textContent =
-                currentUser.email || "Non renseigné";
+                currentUser.email ||
+                "Non renseigné";
         }
 
     } catch (error) {
@@ -1627,15 +1681,10 @@ async function loadSettings() {
         }
     }
 
-
-    /* ========================= */
-    /* THÈME */
-    /* ========================= */
-
     const savedTheme =
         localStorage.getItem(
             "capControleTheme"
-        ) || "dark";
+        ) || "light";
 
     if (themeSelect) {
         themeSelect.value = savedTheme;
@@ -1645,9 +1694,9 @@ async function loadSettings() {
 }
 
 
-/* ========================= */
-/* MODIFIER LE PSEUDO */
-/* ========================= */
+/* ================================================= */
+/*                MODIFIER LE PSEUDO                 */
+/* ================================================= */
 
 async function editUsername() {
 
@@ -1669,20 +1718,16 @@ async function editUsername() {
         newUsername.trim();
 
     if (username.length < 2) {
-
         alert(
             "Le pseudo doit contenir au moins 2 caractères."
         );
-
         return;
     }
 
     if (username.length > 30) {
-
         alert(
             "Le pseudo ne peut pas dépasser 30 caractères."
         );
-
         return;
     }
 
@@ -1711,12 +1756,10 @@ async function editUsername() {
             await response.json();
 
         if (!response.ok) {
-
             alert(
                 data.error ||
                 "Impossible de modifier le pseudo."
             );
-
             return;
         }
 
@@ -1748,9 +1791,9 @@ async function editUsername() {
 }
 
 
-/* ========================= */
-/* MODIFIER LE MOT DE PASSE */
-/* ========================= */
+/* ================================================= */
+/*              MODIFIER MOT DE PASSE                */
+/* ================================================= */
 
 async function changePassword() {
 
@@ -1764,11 +1807,9 @@ async function changePassword() {
     }
 
     if (newPassword.length < 6) {
-
         alert(
             "Le mot de passe doit contenir au moins 6 caractères."
         );
-
         return;
     }
 
@@ -1782,11 +1823,9 @@ async function changePassword() {
     }
 
     if (newPassword !== confirmation) {
-
         alert(
             "Les mots de passe ne correspondent pas."
         );
-
         return;
     }
 
@@ -1816,12 +1855,10 @@ async function changePassword() {
             await response.json();
 
         if (!response.ok) {
-
             alert(
                 data.error ||
                 "Impossible de modifier le mot de passe."
             );
-
             return;
         }
 
@@ -1840,51 +1877,135 @@ async function changePassword() {
 }
 
 
-/* ========================= */
-/* CHANGER LE THÈME */
-/* ========================= */
+/* ================================================= */
+/*                 CHANGER LE THÈME                  */
+/* ================================================= */
 
 function changeTheme() {
-    const themeSelect = document.getElementById("themeSelect");
 
-    if (!themeSelect) return;
+    const themeSelect =
+        document.getElementById("themeSelect");
 
-    const theme = themeSelect.value;
-
-    localStorage.setItem("capControleTheme", theme);
-
-    if (theme === "dark") {
-        document.body.classList.add("dark-theme");
-    } else {
-        document.body.classList.remove("dark-theme");
+    if (!themeSelect) {
+        return;
     }
+
+    const theme =
+        themeSelect.value;
+
+    localStorage.setItem(
+        "capControleTheme",
+        theme
+    );
+
+    applyTheme(theme);
 }
 
 
-/* ========================= */
-/* APPLIQUER LE THÈME */
-/* ========================= */
+/* ================================================= */
+/*                 APPLIQUER LE THÈME                */
+/* ================================================= */
 
 function applyTheme(theme) {
 
-    if (theme === "dark") {
+    const isDark =
+        theme === "dark";
 
-        document.body.classList.add(
-            "dark-theme"
+    document.body.classList.toggle(
+        "dark-theme",
+        isDark
+    );
+
+    /*
+     * Ces variables permettent aussi au thème
+     * de fonctionner sur les éléments qui utilisent
+     * les variables CSS.
+     */
+    if (isDark) {
+
+        document.documentElement.style.setProperty(
+            "--background",
+            "#0f172a"
+        );
+
+        document.documentElement.style.setProperty(
+            "--card",
+            "#1e293b"
+        );
+
+        document.documentElement.style.setProperty(
+            "--text",
+            "#f8fafc"
+        );
+
+        document.documentElement.style.setProperty(
+            "--muted",
+            "#94a3b8"
+        );
+
+        document.documentElement.style.setProperty(
+            "--border",
+            "#334155"
         );
 
     } else {
 
-        document.body.classList.remove(
-            "dark-theme"
+        document.documentElement.style.setProperty(
+            "--background",
+            "#f8fafc"
+        );
+
+        document.documentElement.style.setProperty(
+            "--card",
+            "#ffffff"
+        );
+
+        document.documentElement.style.setProperty(
+            "--text",
+            "#111827"
+        );
+
+        document.documentElement.style.setProperty(
+            "--muted",
+            "#6b7280"
+        );
+
+        document.documentElement.style.setProperty(
+            "--border",
+            "#e5e7eb"
         );
     }
 }
 
 
-/* ========================= */
-/* SUPPRIMER LE COMPTE */
-/* ========================= */
+/* ================================================= */
+/*                 CHARGER LE THÈME                  */
+/* ================================================= */
+
+function loadTheme() {
+
+    const savedTheme =
+        localStorage.getItem(
+            "capControleTheme"
+        ) || "light";
+
+    applyTheme(savedTheme);
+
+    const themeSelect =
+        document.getElementById(
+            "themeSelect"
+        );
+
+    if (themeSelect) {
+        themeSelect.value =
+            savedTheme;
+    }
+}
+
+
+/* ================================================= */
+/*                SUPPRIMER LE COMPTE                */
+/* ================================================= */
 
 async function deleteAccount() {
 
@@ -1907,11 +2028,9 @@ async function deleteAccount() {
         secondConfirmation !==
         "SUPPRIMER"
     ) {
-
         alert(
             "Suppression annulée."
         );
-
         return;
     }
 
@@ -1930,12 +2049,10 @@ async function deleteAccount() {
             await response.json();
 
         if (!response.ok) {
-
             alert(
                 data.error ||
                 "Impossible de supprimer le compte."
             );
-
             return;
         }
 
@@ -1945,17 +2062,30 @@ async function deleteAccount() {
 
         currentUser = null;
 
-        document.getElementById(
-            "app"
-        ).style.display = "none";
+        const app =
+            document.getElementById("app");
 
-        document.getElementById(
-            "settingsPage"
-        ).style.display = "none";
+        const settingsPage =
+            document.getElementById(
+                "settingsPage"
+            );
 
-        document.getElementById(
-            "loginScreen"
-        ).style.display = "block";
+        const loginScreen =
+            document.getElementById(
+                "loginScreen"
+            );
+
+        if (app) {
+            app.style.display = "none";
+        }
+
+        if (settingsPage) {
+            settingsPage.style.display = "none";
+        }
+
+        if (loginScreen) {
+            loginScreen.style.display = "block";
+        }
 
         showLogin();
 
@@ -1972,41 +2102,6 @@ async function deleteAccount() {
     }
 }
 
-
-/* ========================= */
-/* BOUTON PARAMÈTRES */
-/* ========================= */
-
-settingsButton?.addEventListener(
-    "click",
-    () => {
-
-        profileDropdown?.classList.remove(
-            "open"
-        );
-
-        openSettings();
-    }
-);
-
-function loadTheme() {
-    const savedTheme =
-        localStorage.getItem("capControleTheme") || "dark";
-
-    if (savedTheme === "dark") {
-        document.body.classList.add("dark-theme");
-    } else {
-        document.body.classList.remove("dark-theme");
-    }
-
-    const themeSelect =
-        document.getElementById("themeSelect");
-
-    if (themeSelect) {
-        themeSelect.value = savedTheme;
-    }
-}
-window.addEventListener("load", loadTheme);
 
 /* ================================================= */
 /*                  ONBOARDING                       */
@@ -2028,6 +2123,7 @@ const onboardingData = {
 /* ================================================= */
 
 function getOnboardingKey() {
+
     if (currentUser?.email) {
         return "capControleOnboarding_" +
             currentUser.email.toLowerCase();
@@ -2038,6 +2134,7 @@ function getOnboardingKey() {
 
 
 function hasCompletedOnboarding() {
+
     return localStorage.getItem(
         getOnboardingKey()
     ) === "true";
@@ -2045,6 +2142,7 @@ function hasCompletedOnboarding() {
 
 
 function saveOnboarding() {
+
     localStorage.setItem(
         getOnboardingKey(),
         "true"
@@ -2058,16 +2156,25 @@ function saveOnboarding() {
 
 
 function loadOnboardingData() {
+
     try {
-        const saved = localStorage.getItem(
-            getOnboardingKey() + "_data"
-        );
 
-        if (!saved) return;
+        const saved =
+            localStorage.getItem(
+                getOnboardingKey() + "_data"
+            );
 
-        const data = JSON.parse(saved);
+        if (!saved) {
+            return;
+        }
 
-        if (data && typeof data === "object") {
+        const data =
+            JSON.parse(saved);
+
+        if (
+            data &&
+            typeof data === "object"
+        ) {
             Object.assign(
                 onboardingData,
                 data
@@ -2075,6 +2182,7 @@ function loadOnboardingData() {
         }
 
     } catch (error) {
+
         console.error(
             "Erreur chargement onboarding :",
             error
@@ -2089,9 +2197,20 @@ function loadOnboardingData() {
 
 function showIntro() {
 
-    const intro = document.getElementById("intro");
-    const onboarding = document.getElementById("onboarding");
-    const success = document.getElementById("success");
+    const intro =
+        document.getElementById("intro");
+
+    const onboarding =
+        document.getElementById("onboarding");
+
+    const success =
+        document.getElementById("success");
+
+    const loginScreen =
+        document.getElementById("loginScreen");
+
+    const app =
+        document.getElementById("app");
 
     if (intro) {
         intro.classList.remove("hidden");
@@ -2106,6 +2225,19 @@ function showIntro() {
         success.classList.add("hidden");
     }
 
+    if (app) {
+        app.style.display = "none";
+    }
+
+    if (loginScreen) {
+        loginScreen.style.display = "none";
+    }
+
+    /*
+     * IMPORTANT :
+     * 2200 ms = durée de la barre de chargement.
+     * L'intro ne disparaît donc plus avant la fin.
+     */
     setTimeout(() => {
 
         if (intro) {
@@ -2113,16 +2245,29 @@ function showIntro() {
             intro.style.display = "none";
         }
 
-        if (onboarding) {
-            onboarding.classList.remove("hidden");
-            onboarding.style.display = "block";
+        if (currentUser) {
+
+            if (hasCompletedOnboarding()) {
+                showApp();
+            } else {
+                if (onboarding) {
+                    onboarding.classList.remove("hidden");
+                }
+
+                onboardingStep = 1;
+                updateOnboarding();
+            }
+
+        } else {
+
+            if (loginScreen) {
+                loginScreen.style.display = "block";
+            }
         }
 
-        onboardingStep = 1;
-        updateOnboarding();
-
-    }, 3000);
+    }, 2200);
 }
+
 
 function showSuccess() {
 
@@ -2143,7 +2288,9 @@ function showSuccess() {
     const summary =
         document.getElementById("profileSummary");
 
-    if (!summary) return;
+    if (!summary) {
+        return;
+    }
 
     summary.innerHTML = `
         <strong>Ton profil</strong><br><br>
@@ -2184,7 +2331,7 @@ function showSuccess() {
         }<br>
 
         ⏱️ Temps disponible : ${
-            onboardingData.time
+            escapeHTML(onboardingData.time)
         } min
     `;
 }
@@ -2209,6 +2356,7 @@ function showApp() {
 
     if (intro) {
         intro.classList.add("hidden");
+        intro.style.display = "none";
     }
 
     if (onboarding) {
@@ -2230,7 +2378,7 @@ function showApp() {
 
 
 /* ================================================= */
-/*                 ÉTAPES                            */
+/*                    ÉTAPES                         */
 /* ================================================= */
 
 function updateOnboarding() {
@@ -2251,9 +2399,7 @@ function updateOnboarding() {
             "active",
             stepNumber === onboardingStep
         );
-
     });
-
 
     const progressBar =
         document.getElementById(
@@ -2271,16 +2417,13 @@ function updateOnboarding() {
             `${(
                 onboardingStep / 6
             ) * 100}%`;
-
     }
 
     if (stepNumber) {
 
         stepNumber.textContent =
             `${onboardingStep}/6`;
-
     }
-
 
     updateContinueButton();
 }
@@ -2293,14 +2436,18 @@ function updateContinueButton() {
             `.step[data-step="${onboardingStep}"]`
         );
 
-    if (!currentStep) return;
+    if (!currentStep) {
+        return;
+    }
 
     const button =
         currentStep.querySelector(
             ".next-button"
         );
 
-    if (!button) return;
+    if (!button) {
+        return;
+    }
 
     let valid = false;
 
@@ -2389,12 +2536,9 @@ document
                     onboardingStep++;
 
                     updateOnboarding();
-
                 }
-
             }
         );
-
     });
 
 
@@ -2433,7 +2577,6 @@ document
                 updateContinueButton();
             }
         );
-
     });
 
 
@@ -2472,7 +2615,6 @@ document
                 updateContinueButton();
             }
         );
-
     });
 
 
@@ -2514,13 +2656,11 @@ document
                     onboardingData.subjects.push(
                         value
                     );
-
                 }
 
                 updateContinueButton();
             }
         );
-
     });
 
 
@@ -2559,7 +2699,6 @@ document
                 updateContinueButton();
             }
         );
-
     });
 
 
@@ -2609,10 +2748,8 @@ document
                     finishButton.disabled =
                         false;
                 }
-
             }
         );
-
     });
 
 
@@ -2638,7 +2775,6 @@ function getObjectiveLabel(value) {
 
         retard:
             "Rattraper mon retard"
-
     };
 
     return escapeHTML(
@@ -2672,26 +2808,32 @@ document
             saveOnboarding();
 
             showSuccess();
-
         }
     );
 
 
 /* ================================================= */
-/*              DÉCOUVRIR L'APPLICATION              */
+/*              DÉCOUVRIR APPLICATION                */
 /* ================================================= */
 
 document
     .getElementById("discoverButton")
     ?.addEventListener(
         "click",
-        async () => {
+        async (event) => {
+
+            /*
+             * Empêche un éventuel onclick="completeOnboarding()"
+             * dans le HTML de provoquer une erreur.
+             */
+            if (event) {
+                event.preventDefault();
+            }
 
             showApp();
 
             await loadControls();
             await loadAccountData();
-
         }
     );
 
