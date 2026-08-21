@@ -291,12 +291,19 @@ async function register() {
             );
             return;
         }
-
-        document.getElementById("loginScreen").style.display = "none";
-        document.getElementById("app").style.display = "block";
-
-        await loadControls();
-        await loadAccountData();
+        const meResponse = await fetch("/me", {
+            credentials: "include"
+        });
+        
+        if (meResponse.ok) {
+            const meData = await meResponse.json();
+        
+            if (meData.user) {
+                currentUser = meData.user;
+            }
+        }
+        
+        await startAccountExperience();
     } catch (error) {
         console.error(error);
         alert("Impossible de contacter le serveur.");
