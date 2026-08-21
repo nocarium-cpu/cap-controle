@@ -323,6 +323,45 @@ async function requireAuth(request, response, next) {
 }
 
 /* =========================================================
+   ONBOARDING
+========================================================= */
+
+app.put(
+    "/api/onboarding/complete",
+    requireAuth,
+    async (request, response) => {
+        try {
+            await usersCollection().updateOne(
+                {
+                    _id: request.user._id
+                },
+                {
+                    $set: {
+                        onboardingCompleted: true
+                    }
+                }
+            );
+
+            return response.json({
+                success: true,
+                onboardingCompleted: true
+            });
+
+        } catch (error) {
+            console.error(
+                "Erreur onboarding :",
+                error
+            );
+
+            return response.status(500).json({
+                error:
+                    "Impossible de sauvegarder l'onboarding."
+            });
+        }
+    }
+);
+
+/* =========================================================
    AUTHENTIFICATION
 ========================================================= */
 
