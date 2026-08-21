@@ -465,7 +465,8 @@ app.post("/register", async (request, response) => {
                 id: userId.toString(),
                 username: cleanUsername,
                 email: cleanEmail,
-                lastRevisionDate: null
+                lastRevisionDate: null,
+                onboardingCompleted: false
             }
         });
 
