@@ -1761,25 +1761,19 @@ async function changePassword() {
 /* ========================= */
 
 function changeTheme() {
+    const themeSelect = document.getElementById("themeSelect");
 
-    const themeSelect =
-        document.getElementById(
-            "themeSelect"
-        );
+    if (!themeSelect) return;
 
-    if (!themeSelect) {
-        return;
+    const theme = themeSelect.value;
+
+    localStorage.setItem("capControleTheme", theme);
+
+    if (theme === "dark") {
+        document.body.classList.add("dark-theme");
+    } else {
+        document.body.classList.remove("dark-theme");
     }
-
-    const theme =
-        themeSelect.value;
-
-    localStorage.setItem(
-        "capControleTheme",
-        theme
-    );
-
-    applyTheme(theme);
 }
 
 
@@ -1910,3 +1904,23 @@ settingsButton?.addEventListener(
         openSettings();
     }
 );
+
+function loadTheme() {
+    const savedTheme =
+        localStorage.getItem("capControleTheme") || "light";
+
+    if (savedTheme === "dark") {
+        document.body.classList.add("dark-theme");
+    } else {
+        document.body.classList.remove("dark-theme");
+    }
+
+    const themeSelect =
+        document.getElementById("themeSelect");
+
+    if (themeSelect) {
+        themeSelect.value = savedTheme;
+    }
+}
+
+window.addEventListener("load", loadTheme);
