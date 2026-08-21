@@ -118,14 +118,18 @@ function toObjectId(id) {
     return new ObjectId(id);
 }
 
-return {
-    id: user._id.toString(),
-    username: user.username,
-    email: user.email,
-    createdAt: user.createdAt,
-    lastRevisionDate: user.lastRevisionDate || null,
-    onboardingCompleted: user.onboardingCompleted === true
-};
+function sanitizeUser(user) {
+    if (!user) return null;
+
+    return {
+        id: user._id.toString(),
+        username: user.username,
+        email: user.email,
+        createdAt: user.createdAt,
+        lastRevisionDate: user.lastRevisionDate || null,
+        onboardingCompleted: user.onboardingCompleted === true
+    };
+}
 
 /* =========================================================
    MOTS DE PASSE
