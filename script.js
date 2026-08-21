@@ -2090,17 +2090,13 @@ function loadOnboardingData() {
 
 function showIntro() {
 
-    const intro =
-        document.getElementById("intro");
-
-    const onboarding =
-        document.getElementById("onboarding");
-
-    const success =
-        document.getElementById("success");
+    const intro = document.getElementById("intro");
+    const onboarding = document.getElementById("onboarding");
+    const success = document.getElementById("success");
 
     if (intro) {
         intro.classList.remove("hidden");
+        intro.style.display = "flex";
     }
 
     if (onboarding) {
@@ -2111,54 +2107,23 @@ function showIntro() {
         success.classList.add("hidden");
     }
 
-    // Attend la fin de l'animation de chargement
-    const loadingBar =
-        document.querySelector("#intro .loading-bar");
+    setTimeout(() => {
 
-    if (loadingBar) {
+        if (intro) {
+            intro.classList.add("hidden");
+            intro.style.display = "none";
+        }
 
-        loadingBar.addEventListener(
-            "animationend",
-            () => {
+        if (onboarding) {
+            onboarding.classList.remove("hidden");
+            onboarding.style.display = "block";
+        }
 
-                if (intro) {
-                    intro.classList.add("hidden");
-                }
+        onboardingStep = 1;
+        updateOnboarding();
 
-                if (onboarding) {
-                    onboarding.classList.remove("hidden");
-                }
-
-                onboardingStep = 1;
-
-                updateOnboarding();
-
-            },
-            { once: true }
-        );
-
-    } else {
-
-        // Sécurité si la barre n'existe pas
-        setTimeout(() => {
-
-            if (intro) {
-                intro.classList.add("hidden");
-            }
-
-            if (onboarding) {
-                onboarding.classList.remove("hidden");
-            }
-
-            onboardingStep = 1;
-
-            updateOnboarding();
-
-        }, 3000);
-
-    }
+    }, 3000);
 }
-
 
 function showSuccess() {
 
