@@ -1108,3 +1108,7 @@ body.dark-theme .quiz-card {
 body.dark-theme .copyright {
     color: #9f958a;
 }
+
+#text_input{
+    bottom_margin: 20px;
+}
