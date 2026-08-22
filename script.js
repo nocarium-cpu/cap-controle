@@ -3109,17 +3109,19 @@ async function startAccountExperience() {
 
     if (hasCompletedOnboarding()) {
 
-        showApp();
+        waitForIntroThen(async () => {
 
-        await loadControls();
-        await loadAccountData();
+            showApp();
+
+            await loadControls();
+            await loadAccountData();
+        });
 
         return;
     }
 
     showIntro();
 }
-
 
 /* ================================================= */
 /*             INITIALISATION DOM                    */
