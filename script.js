@@ -3434,134 +3434,17 @@ function initializeApp() {
 
 window.addEventListener(
     "load",
-    async () => {
+    () => {
 
         initializeApp();
 
-        try {
+        if (hasCompletedOnboarding()) {
 
-            const response =
-                await fetch("/me", {
-                    credentials: "include"
-                });
+            showSuccess(); // ou directement tes futurs écrans plus tard
 
-            const data =
-                await response.json();
+        } else {
 
-
-            /* ========================= */
-            /* UTILISATEUR CONNECTÉ       */
-            /* ========================= */
-
-            if (data.loggedIn) {
-
-                currentUser =
-                    data.user || null;
-
-                const loginScreen =
-                    document.getElementById(
-                        "loginScreen"
-                    );
-
-                if (loginScreen) {
-                    loginScreen.style.display =
-                        "none";
-                }
-
-                await startAccountExperience();
-
-                return;
-            }
-
-
-                        /* ========================= */
-            /* PAS CONNECTÉ               */
-            /* ========================= */
-
-            const intro =
-                document.getElementById("intro");
-
-            const onboarding =
-                document.getElementById("onboarding");
-
-            const success =
-                document.getElementById("success");
-
-            const app =
-                document.getElementById("app");
-
-            if (onboarding) {
-                onboarding.classList.add("hidden");
-            }
-
-            if (success) {
-                success.classList.add("hidden");
-            }
-
-            if (app) {
-                app.style.display = "none";
-            }
-
-            const loginScreen =
-                document.getElementById("loginScreen");
-
-            const showLoginAfterIntro = () => {
-
-                if (intro) {
-                    intro.classList.add("hidden");
-                }
-
-                if (loginScreen) {
-                    loginScreen.style.display = "block";
-                }
-            };
-
-            const loadingBar =
-                document.querySelector(".loading-bar div");
-
-            if (loadingBar) {
-
-                let finished = false;
-
-                const finishOnce = () => {
-
-                    if (finished) {
-                        return;
-                    }
-
-                    finished = true;
-
-                    setTimeout(showLoginAfterIntro, 150);
-                };
-
-                loadingBar.addEventListener(
-                    "animationend",
-                    finishOnce,
-                    { once: true }
-                );
-
-                setTimeout(finishOnce, 3500);
-
-            } else {
-
-                setTimeout(showLoginAfterIntro, 2200);
-            }
-                    } catch (error) {
-
-            console.error(
-                "Erreur vérification session :",
-                error
-            );
-
-            const loginScreen =
-                document.getElementById(
-                    "loginScreen"
-                );
-
-            if (loginScreen) {
-                loginScreen.style.display =
-                    "block";
-            }
+            showIntro();
         }
     }
 );
