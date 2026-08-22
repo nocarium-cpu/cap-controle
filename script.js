@@ -3440,7 +3440,15 @@ window.addEventListener(
 
         if (hasCompletedOnboarding()) {
 
-            showSuccess(); // ou directement tes futurs écrans plus tard
+            const intro =
+                document.getElementById("intro");
+
+            if (intro) {
+                intro.classList.add("hidden");
+                intro.style.display = "none";
+            }
+
+            showSuccess();
 
         } else {
 
