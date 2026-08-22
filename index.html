@@ -306,6 +306,110 @@
 
     </section>
 
+    <!-- APPLICATION / DASHBOARD -->
+
+    <div id="app">
+    
+        <div class="container">
+    
+            <h1>
+                Cap Contrôle
+            </h1>
+    
+            <div id="dashboard" class="dashboard"></div>
+    
+            <div id="nextExam" class="card next-exam"></div>
+    
+            <div id="todayRevision" class="card today-revision"></div>
+    
+            <div class="card form">
+    
+                <input
+                    id="subject"
+                    type="text"
+                    placeholder="Matière"
+                >
+    
+                <input
+                    id="chapter"
+                    type="text"
+                    placeholder="Chapitre"
+                >
+    
+                <input
+                    id="date"
+                    type="date"
+                >
+    
+                <button id="addBtn">
+                    Ajouter
+                </button>
+    
+            </div>
+    
+            <div id="controls"></div>
+    
+            <div class="card ai-section">
+    
+                <textarea
+                    id="courseInput"
+                    placeholder="Colle ton cours ici..."
+                ></textarea>
+    
+                <button
+                    class="generate-btn"
+                    onclick="generateRevisionSheet()">
+                    Générer ma fiche
+                </button>
+    
+            </div>
+    
+            <div id="aiResult"></div>
+    
+            <div class="card share-card">
+    
+                <h2 id="share-text">
+                    Importer une fiche
+                </h2>
+    
+                <div class="share-import">
+    
+                    <input
+                        id="shareCode"
+                        type="text"
+                        placeholder="Code de partage"
+                    >
+    
+                    <button
+                        id="importBtn"
+                        onclick="importSheet()">
+                        Importer
+                    </button>
+    
+                </div>
+    
+            </div>
+    
+            <div class="card">
+    
+                <h2 id="share-text">
+                    Historique des fiches
+                </h2>
+    
+                <input
+                    type="text"
+                    id="historySearch"
+                    placeholder="Rechercher une fiche..."
+                    oninput="renderHistory()"
+                >
+    
+                <div id="historyList"></div>
+    
+            </div>
+    
+        </div>
+    
+    </div>
 
     <script src="script.js"></script>
 
