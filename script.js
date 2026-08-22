@@ -2721,43 +2721,22 @@ function waitForIntroThen(callback) {
 
 function showIntro() {
 
-    const intro =
-        document.getElementById("intro");
+    const intro = document.getElementById("intro");
+    const onboarding = document.getElementById("onboarding");
+    const success = document.getElementById("success");
+    const app = document.getElementById("app");
 
-    const onboarding =
-        document.getElementById("onboarding");
-
-    const success =
-        document.getElementById("success");
-
-    const app =
-        document.getElementById("app");
-
-    if (app) {
-        app.style.display = "none";
-    }
+    if (app) app.style.display = "none";
 
     if (intro) {
         intro.classList.remove("hidden");
         intro.style.display = "flex";
     }
 
-    if (onboarding) {
-        onboarding.classList.add("hidden");
-    }
+    if (onboarding) onboarding.classList.add("hidden");
+    if (success) success.classList.add("hidden");
 
-    if (success) {
-        success.classList.add("hidden");
-    }
-
-    /*
-     * On attend la fin réelle de l'animation
-     * de la barre de chargement.
-     */
-    const loadingBar =
-        document.querySelector(".loading-bar div");
-
-    const finishIntro = () => {
+    waitForIntroThen(() => {
 
         if (intro) {
             intro.classList.add("hidden");
@@ -2765,60 +2744,11 @@ function showIntro() {
         }
 
         if (onboarding) {
-
             onboarding.classList.remove("hidden");
-
             onboardingStep = 1;
-
             updateOnboarding();
         }
-    };
-
-    if (loadingBar) {
-
-        let finished = false;
-
-        const finishOnce = () => {
-
-            if (finished) {
-                return;
-            }
-
-            finished = true;
-
-            setTimeout(
-                finishIntro,
-                150
-            );
-        };
-
-        loadingBar.addEventListener(
-            "animationend",
-            finishOnce,
-            { once: true }
-        );
-
-        /*
-         * Sécurité : si le navigateur ne déclenche
-         * pas animationend, l'intro ne reste pas bloquée.
-         */
-                
-        setTimeout(
-            finishOnce,
-            3500
-        );
-
-    } else {
-
-        /*
-         * Si aucune barre n'existe,
-         * on garde un délai de secours.
-         */
-        setTimeout(
-            finishIntro,
-            2200
-        );
-    }
+    });
 }
 
 
