@@ -2681,9 +2681,43 @@ function loadOnboardingData() {
 }
 
 
+
 /* ================================================= */
 /*                AFFICHAGE ÉCRANS                   */
 /* ================================================= */
+
+
+function waitForIntroThen(callback) {
+
+    const loadingBar =
+        document.querySelector(".loading-bar div");
+
+    if (!loadingBar) {
+        setTimeout(callback, 2200);
+        return;
+    }
+
+    let finished = false;
+
+    const finishOnce = () => {
+
+        if (finished) {
+            return;
+        }
+
+        finished = true;
+
+        setTimeout(callback, 150);
+    };
+
+    loadingBar.addEventListener(
+        "animationend",
+        finishOnce,
+        { once: true }
+    );
+
+    setTimeout(finishOnce, 3500);
+}
 
 function showIntro() {
 
