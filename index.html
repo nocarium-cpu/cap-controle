@@ -306,9 +306,67 @@
 
     </section>
 
-    <!-- APPLICATION / DASHBOARD -->
+    <!-- APPLICATION -->
 
     <div id="app">
+    
+        <div class="profile-menu-container">
+    
+            <button
+                id="profileButton"
+                class="profile-button"
+                aria-label="Menu du compte"
+                type="button">
+    
+                <svg
+                    class="profile-icon"
+                    viewBox="0 0 24 24"
+                    fill="none"
+                    xmlns="http://www.w3.org/2000/svg">
+    
+                    <circle
+                        cx="12"
+                        cy="8"
+                        r="3.5"
+                        stroke="currentColor"
+                        stroke-width="1.8"/>
+    
+                    <path
+                        d="M5 20C5.8 15.9 8.1 14 12 14C15.9 14 18.2 15.9 19 20"
+                        stroke="currentColor"
+                        stroke-width="1.8"
+                        stroke-linecap="round"/>
+    
+                </svg>
+    
+            </button>
+    
+            <div
+                id="profileDropdown"
+                class="profile-dropdown">
+    
+                <button
+                    type="button"
+                    id="settingsButton"
+                    class="profile-menu-item">
+    
+                    <span>Paramètres</span>
+    
+                </button>
+    
+                <button
+                    type="button"
+                    id="logoutButton"
+                    class="profile-menu-item logout-item">
+    
+                    <span>Se déconnecter</span>
+    
+                </button>
+    
+            </div>
+    
+        </div>
+    
     
         <div class="container">
     
@@ -316,11 +374,21 @@
                 Cap Contrôle
             </h1>
     
-            <div id="dashboard" class="dashboard"></div>
+            <div
+                id="dashboard"
+                class="dashboard">
+            </div>
     
-            <div id="nextExam" class="card next-exam"></div>
+            <div
+                id="nextExam"
+                class="card next-exam">
+            </div>
     
-            <div id="todayRevision" class="card today-revision"></div>
+            <div
+                id="todayRevision"
+                class="card today-revision">
+            </div>
+    
     
             <div class="card form">
     
@@ -347,7 +415,9 @@
     
             </div>
     
+    
             <div id="controls"></div>
+    
     
             <div class="card ai-section">
     
@@ -359,12 +429,16 @@
                 <button
                     class="generate-btn"
                     onclick="generateRevisionSheet()">
+    
                     Générer ma fiche
+    
                 </button>
     
             </div>
     
+    
             <div id="aiResult"></div>
+    
     
             <div class="card share-card">
     
@@ -383,12 +457,15 @@
                     <button
                         id="importBtn"
                         onclick="importSheet()">
+    
                         Importer
+    
                     </button>
     
                 </div>
     
             </div>
+    
     
             <div class="card">
     
@@ -404,6 +481,24 @@
                 >
     
                 <div id="historyList"></div>
+    
+            </div>
+    
+    
+            <div class="footer-links">
+    
+                <a
+                    class="support-link"
+                    href="https://paypal.me/capcontrole"
+                    target="_blank">
+    
+                    Soutenir Cap Contrôle
+    
+                </a>
+    
+                <span class="copyright">
+                    © 2026 Cap Contrôle
+                </span>
     
             </div>
     
